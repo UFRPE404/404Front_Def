@@ -21,7 +21,7 @@ const SportsSidebar = () => {
   const [active, setActive] = useState("Futebol");
 
   return (
-    <aside className="w-full lg:w-56 shrink-0">
+    <aside className="w-full lg:w-56 shrink-0 lg:self-start lg:sticky lg:top-20">
       <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground px-4 mb-3">
         Esportes
       </h2>
