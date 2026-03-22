@@ -1,17 +1,50 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import MatchCard from "./MatchCard";
 
 const games = [
-  { name: "Fortune Tiger", category: "Slots", image: "🐯" },
-  { name: "Aviator", category: "Crash", image: "✈️" },
-  { name: "Mines", category: "Instant", image: "💣" },
-  { name: "Roleta Brasileira", category: "Cassino", image: "🎰" },
-  { name: "Blackjack VIP", category: "Cartas", image: "🃏" },
-  { name: "Spaceman", category: "Crash", image: "🚀" },
-  { name: "Sweet Bonanza", category: "Slots", image: "🍬" },
-  { name: "Crazy Time", category: "Ao Vivo", image: "🎡" },
-  { name: "Plinko", category: "Instant", image: "⚡" },
-  { name: "Dragon Tiger", category: "Cartas", image: "🐉" },
+  {
+    league: "Bundesliga",
+    time: "14:30",
+    teamA: "Bayern Munich",
+    teamB: "Borussia Dortmund",
+    odds: [1.75, 3.80, 4.20] as [number, number, number],
+  },
+  {
+    league: "Ligue 1",
+    time: "17:00",
+    teamA: "PSG",
+    teamB: "Marseille",
+    odds: [1.50, 4.10, 5.50] as [number, number, number],
+  },
+  {
+    league: "Brasileirão Série B",
+    time: "20:00",
+    teamA: "Sport Recife",
+    teamB: "Ceará",
+    odds: [2.40, 3.10, 2.95] as [number, number, number],
+  },
+  {
+    league: "Copa do Brasil",
+    time: "21:45",
+    teamA: "Grêmio",
+    teamB: "Cruzeiro",
+    odds: [2.15, 3.25, 3.30] as [number, number, number],
+  },
+  {
+    league: "Eredivisie",
+    time: "15:00",
+    teamA: "Ajax",
+    teamB: "PSV",
+    odds: [2.50, 3.30, 2.70] as [number, number, number],
+  },
+  {
+    league: "Liga Portugal",
+    time: "18:30",
+    teamA: "Benfica",
+    teamB: "Porto",
+    odds: [2.05, 3.40, 3.45] as [number, number, number],
+  },
 ];
 
 const GamesCarousel = () => {
@@ -19,9 +52,8 @@ const GamesCarousel = () => {
 
   const scroll = (dir: "left" | "right") => {
     if (!scrollRef.current) return;
-    const amount = 260;
     scrollRef.current.scrollBy({
-      left: dir === "left" ? -amount : amount,
+      left: dir === "left" ? -320 : 320,
       behavior: "smooth",
     });
   };
@@ -48,29 +80,21 @@ const GamesCarousel = () => {
 
       <div
         ref={scrollRef}
-        className="flex gap-3 overflow-x-auto scrollbar-thin pb-2 snap-x snap-mandatory"
+        className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory"
         style={{ scrollbarWidth: "none" }}
       >
         {games.map((game, i) => (
-          <button
-            key={game.name}
-            className="flex-shrink-0 w-[140px] group cursor-pointer animate-in fade-in slide-in-from-bottom-3"
+          <div
+            key={i}
+            className="flex-shrink-0 w-[280px] snap-start animate-in fade-in slide-in-from-bottom-3"
             style={{
-              animationDelay: `${i * 60}ms`,
+              animationDelay: `${i * 70}ms`,
               animationFillMode: "both",
               animationDuration: "500ms",
             }}
           >
-            <div className="aspect-square rounded-xl bg-card border border-border flex items-center justify-center text-5xl transition-all duration-200 group-hover:border-primary/40 group-hover:shadow-[0_0_16px_hsl(var(--primary)/0.1)] group-active:scale-95">
-              {game.image}
-            </div>
-            <p className="text-xs font-semibold text-foreground mt-2 truncate text-center">
-              {game.name}
-            </p>
-            <p className="text-[10px] text-muted-foreground text-center">
-              {game.category}
-            </p>
-          </button>
+            <MatchCard {...game} />
+          </div>
         ))}
       </div>
     </section>
