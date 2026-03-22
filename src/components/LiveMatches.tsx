@@ -1,48 +1,6 @@
 import { Timer } from "lucide-react";
 import MatchCard from "./MatchCard";
-
-const liveMatches = [
-  {
-    league: "Brasileirão Série A",
-    time: "67'",
-    live: true,
-    teamA: "Flamengo",
-    teamB: "Palmeiras",
-    scoreA: 1,
-    scoreB: 2,
-    odds: [2.45, 3.20, 2.90] as [number, number, number],
-  },
-  {
-    league: "Premier League",
-    time: "34'",
-    live: true,
-    teamA: "Chelsea",
-    teamB: "Tottenham",
-    scoreA: 0,
-    scoreB: 1,
-    odds: [3.10, 3.40, 2.15] as [number, number, number],
-  },
-  {
-    league: "La Liga",
-    time: "82'",
-    live: true,
-    teamA: "Sevilla",
-    teamB: "Valencia",
-    scoreA: 3,
-    scoreB: 1,
-    odds: [1.25, 5.50, 9.00] as [number, number, number],
-  },
-  {
-    league: "Brasileirão Série A",
-    time: "12'",
-    live: true,
-    teamA: "Corinthians",
-    teamB: "São Paulo",
-    scoreA: 0,
-    scoreB: 0,
-    odds: [2.30, 3.15, 3.05] as [number, number, number],
-  },
-];
+import { liveMatches } from "@/data/matches";
 
 const LiveMatches = () => {
   return (

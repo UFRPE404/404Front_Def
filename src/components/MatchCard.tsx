@@ -1,5 +1,6 @@
 import { TrendingUp, AlertTriangle, Target, Shield } from "lucide-react";
 import { useBetSlip } from "@/contexts/BetSlipContext";
+import { useNavigate } from "react-router-dom";
 
 interface InsightData {
   goalChance: number;
@@ -8,6 +9,7 @@ interface InsightData {
 }
 
 interface MatchProps {
+  id: string;
   league: string;
   time: string;
   live?: boolean;
@@ -25,8 +27,9 @@ const InsightBar = ({ value, color }: { value: number; color: string }) => (
   </div>
 );
 
-const MatchCard = ({ league, time, live, teamA, teamB, scoreA, scoreB, odds, insights }: MatchProps) => {
+const MatchCard = ({ id, league, time, live, teamA, teamB, scoreA, scoreB, odds, insights }: MatchProps) => {
   const { addSelection, isSelected } = useBetSlip();
+  const navigate = useNavigate();
   const matchId = `${teamA}-${teamB}`;
 
   const handleOddsClick = (pick: string, oddValue: number) => {
@@ -53,8 +56,12 @@ const MatchCard = ({ league, time, live, teamA, teamB, scoreA, scoreB, odds, ins
   const favLabel = favIndex === 0 ? teamA : favIndex === 2 ? teamB : "Empate";
   const winProb = Math.round((1 / minOdd) * 100);
 
+  const handleCardClick = () => {
+    navigate(`/analises/${encodeURIComponent(id)}`);
+  };
+
   return (
-    <div className="match-card">
+    <div className="match-card cursor-pointer hover:ring-1 hover:ring-primary/40 transition-all duration-200" onClick={handleCardClick}>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs text-muted-foreground font-medium">{league}</span>
