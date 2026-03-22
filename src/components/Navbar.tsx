@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Search, Menu, TrendingUp } from "lucide-react";
 import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
