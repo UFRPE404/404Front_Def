@@ -36,9 +36,6 @@ const Navbar = () => {
           <button className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary">
             <Search className="w-5 h-5" />
           </button>
-          <Button variant="hero" size="sm">
-            Cadastrar
-          </Button>
           <button
             className="md:hidden p-2 text-muted-foreground hover:text-foreground"
             onClick={() => setMenuOpen(!menuOpen)}
