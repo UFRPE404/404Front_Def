@@ -22,13 +22,14 @@ const Navbar = () => {
 
         {/* Center nav links - desktop */}
         <div className="hidden md:flex items-center gap-1">
-          {["Análises", "Ao Vivo", "Sugestões"].map((item) => (
-            <button
-              key={item}
-              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-200 rounded-lg hover:bg-secondary"
+          {([{ label: "Análises", to: "/analises" }, { label: "Ao Vivo", to: "/" }, { label: "Sugestões", to: "/" }] as const).map((item) => (
+            <Link
+              key={item.label}
+              to={item.to}
+              className={`px-4 py-2 text-sm font-medium transition-colors duration-200 rounded-lg ${location.pathname === item.to && item.label === "Análises" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-secondary"}`}
             >
-              {item}
-            </button>
+              {item.label}
+            </Link>
           ))}
         </div>
 
