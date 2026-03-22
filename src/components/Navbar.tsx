@@ -10,7 +10,7 @@ const Navbar = () => {
     <nav className="nav-glass sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
         {/* Logo */}
-        <div className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
             <TrendingUp className="w-4 h-4 text-primary-foreground" />
           </div>
@@ -18,7 +18,7 @@ const Navbar = () => {
             <span className="text-foreground">Ajuda</span>{" "}
             <span className="text-primary">da Sorte</span>
           </span>
-        </div>
+        </Link>
 
         {/* Center nav links - desktop */}
         <div className="hidden md:flex items-center gap-1">
