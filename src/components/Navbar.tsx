@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { Search, Menu, TrendingUp } from "lucide-react";
+import { Search, Menu } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import futDataLogo from "@/assets/png_fut_data.png";
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -12,13 +13,11 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <TrendingUp className="w-4 h-4 text-primary-foreground" />
-          </div>
-          <span className="text-xl font-bold tracking-tight">
-            <span className="text-foreground">Ajuda</span>{" "}
-            <span className="text-primary">da Sorte</span>
-          </span>
+          <img
+            src={futDataLogo}
+            alt="FutData Logo"
+            className="w-24 h-24 object-contain drop-shadow-md"
+          />
         </Link>
 
         {/* Center nav links - desktop */}
