@@ -51,13 +51,15 @@ const Navbar = () => {
       {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden border-t border-border px-4 py-3 space-y-1">
-          {["Análises", "Ao Vivo", "Sugestões"].map((item) => (
-            <button
-              key={item}
+          {([{ label: "Análises", to: "/analises" }, { label: "Ao Vivo", to: "/" }, { label: "Sugestões", to: "/" }] as const).map((item) => (
+            <Link
+              key={item.label}
+              to={item.to}
+              onClick={() => setMenuOpen(false)}
               className="block w-full text-left px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
             >
-              {item}
-            </button>
+              {item.label}
+            </Link>
           ))}
         </div>
       )}
