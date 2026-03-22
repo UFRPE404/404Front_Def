@@ -11,9 +11,12 @@ const Navbar = () => {
         {/* Logo */}
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-extrabold text-lg">S</span>
+            <span className="text-primary-foreground font-extrabold text-lg">A</span>
           </div>
-          <span className="text-foreground font-bold text-xl tracking-tight">SuperBet</span>
+          <span className="text-xl font-bold tracking-tight">
+            <span className="text-foreground">Ajuda</span>{" "}
+            <span className="text-primary">da Sorte</span>
+          </span>
         </div>
 
         {/* Center nav links - desktop */}
