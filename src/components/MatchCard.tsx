@@ -120,24 +120,6 @@ const MatchCard = ({ league, time, live, teamA, teamB, scoreA, scoreB, odds, ins
           <span className="text-[10px] font-bold text-primary">{favLabel} ({winProb}%)</span>
         </div>
       </div>
-
-      {/* Odds */}
-      <div className="grid grid-cols-3 gap-2">
-        {(["1", "X", "2"] as const).map((label, i) => {
-          const selId = `${matchId}-${label}`;
-          const selected = isSelected(selId);
-          return (
-            <button
-              key={label}
-              className={`odds-btn ${selected ? "selected" : ""}`}
-              onClick={() => handleOddsClick(label, odds[i])}
-            >
-              <span className="text-[10px] uppercase tracking-wider">{label}</span>
-              <span className="odds-value">{odds[i].toFixed(2)}</span>
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 };

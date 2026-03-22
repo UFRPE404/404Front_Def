@@ -21,7 +21,7 @@ const Navbar = () => {
 
         {/* Center nav links - desktop */}
         <div className="hidden md:flex items-center gap-1">
-          {["Análises", "Ao Vivo", "Sugestões", "Bilhetes"].map((item) => (
+          {["Análises", "Ao Vivo", "Sugestões"].map((item) => (
             <button
               key={item}
               className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-200 rounded-lg hover:bg-secondary"
@@ -36,9 +36,6 @@ const Navbar = () => {
           <button className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary">
             <Search className="w-5 h-5" />
           </button>
-          <Button variant="login" size="sm" className="hidden sm:inline-flex">
-            Entrar
-          </Button>
           <Button variant="hero" size="sm">
             Cadastrar
           </Button>
@@ -54,7 +51,7 @@ const Navbar = () => {
       {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden border-t border-border px-4 py-3 space-y-1">
-          {["Análises", "Ao Vivo", "Sugestões", "Bilhetes"].map((item) => (
+          {["Análises", "Ao Vivo", "Sugestões"].map((item) => (
             <button
               key={item}
               className="block w-full text-left px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
