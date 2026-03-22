@@ -6,55 +6,60 @@
 
 @layer base {
   :root {
-    --background: 218 73% 15%;
+    --background: 222 80% 10%;
     --foreground: 0 0% 100%;
 
-    --card: 218 60% 18%;
+    --card: 222 60% 14%;
     --card-foreground: 0 0% 100%;
 
-    --popover: 218 60% 18%;
+    --popover: 222 60% 14%;
     --popover-foreground: 0 0% 100%;
 
-    --primary: 140 85% 41%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 148 78% 56%;
+    --primary-foreground: 222 97% 10%;
 
-    --secondary: 218 50% 22%;
+    --secondary: 222 50% 18%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 218 40% 25%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 222 40% 22%;
+    --muted-foreground: 220 20% 65%;
 
-    --accent: 140 85% 41%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 148 78% 56%;
+    --accent-foreground: 222 97% 10%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 218 40% 28%;
-    --input: 218 40% 28%;
-    --ring: 140 85% 41%;
+    --border: 222 40% 22%;
+    --input: 222 40% 22%;
+    --ring: 148 78% 56%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 218 73% 12%;
+    --sidebar-background: 222 80% 8%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 140 85% 41%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 218 50% 20%;
+    --sidebar-primary: 148 78% 56%;
+    --sidebar-primary-foreground: 222 97% 10%;
+    --sidebar-accent: 222 50% 16%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 218 40% 25%;
-    --sidebar-ring: 140 85% 41%;
+    --sidebar-border: 222 40% 20%;
+    --sidebar-ring: 148 78% 56%;
 
     /* Custom tokens */
-    --surface-elevated: 218 55% 20%;
-    --surface-hover: 218 50% 25%;
-    --odds-bg: 218 50% 22%;
-    --odds-hover: 140 85% 41%;
-    --odds-selected: 140 85% 41%;
-    --green-glow: 140 85% 41%;
-    --nav-bg: 218 73% 12%;
-    --hero-gradient-from: 218 73% 15%;
-    --hero-gradient-to: 218 60% 20%;
+    --surface-elevated: 222 55% 16%;
+    --surface-hover: 222 50% 20%;
+    --odds-bg: 222 50% 18%;
+    --odds-hover: 148 78% 56%;
+    --odds-selected: 148 78% 56%;
+    --green-glow: 148 78% 56%;
+    --nav-bg: 222 80% 8%;
+    --hero-gradient-from: 222 80% 10%;
+    --hero-gradient-to: 222 60% 16%;
+
+    /* Analysis tokens */
+    --insight-positive: 148 78% 56%;
+    --insight-warning: 40 90% 55%;
+    --insight-danger: 0 84% 60%;
   }
 }
 
@@ -93,11 +98,19 @@
     border-color: hsl(var(--primary));
     transform: scale(0.97);
   }
+  .odds-btn.selected {
+    background: hsl(var(--odds-selected));
+    color: hsl(var(--primary-foreground));
+    border-color: hsl(var(--primary));
+  }
   .odds-btn:active {
     transform: scale(0.95);
   }
   .odds-btn .odds-value {
     @apply text-foreground font-bold text-base;
+  }
+  .odds-btn.selected .odds-value {
+    color: hsl(var(--primary-foreground));
   }
 
   .sport-item {
@@ -126,5 +139,13 @@
     background: hsl(var(--nav-bg) / 0.95);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid hsl(var(--border));
+  }
+
+  .insight-bar {
+    @apply h-1.5 rounded-full;
+    background: hsl(var(--muted));
+  }
+  .insight-bar-fill {
+    @apply h-full rounded-full transition-all duration-500;
   }
 }
