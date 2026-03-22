@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Search, Menu } from "lucide-react";
+import { Search, Menu, TrendingUp } from "lucide-react";
 import { useState } from "react";
 
 const Navbar = () => {
@@ -11,7 +11,7 @@ const Navbar = () => {
         {/* Logo */}
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-extrabold text-lg">A</span>
+            <TrendingUp className="w-4 h-4 text-primary-foreground" />
           </div>
           <span className="text-xl font-bold tracking-tight">
             <span className="text-foreground">Ajuda</span>{" "}
@@ -21,7 +21,7 @@ const Navbar = () => {
 
         {/* Center nav links - desktop */}
         <div className="hidden md:flex items-center gap-1">
-          {["Esportes", "Ao Vivo", "Cassino", "Promoções"].map((item) => (
+          {["Análises", "Ao Vivo", "Sugestões", "Bilhetes"].map((item) => (
             <button
               key={item}
               className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-200 rounded-lg hover:bg-secondary"
@@ -54,7 +54,7 @@ const Navbar = () => {
       {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden border-t border-border px-4 py-3 space-y-1">
-          {["Esportes", "Ao Vivo", "Cassino", "Promoções"].map((item) => (
+          {["Análises", "Ao Vivo", "Sugestões", "Bilhetes"].map((item) => (
             <button
               key={item}
               className="block w-full text-left px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"

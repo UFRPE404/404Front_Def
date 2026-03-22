@@ -5,6 +5,7 @@ import GamesCarousel from "@/components/GamesCarousel";
 import SportsSidebar from "@/components/SportsSidebar";
 import FeaturedMatches from "@/components/FeaturedMatches";
 import Footer from "@/components/Footer";
+import BetSlip from "@/components/BetSlip";
 
 const Index = () => {
   return (
@@ -20,6 +21,7 @@ const Index = () => {
         <GamesCarousel />
       </main>
       <Footer />
+      <BetSlip />
     </div>
   );
 };
