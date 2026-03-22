@@ -21,7 +21,7 @@ const Navbar = () => {
 
         {/* Center nav links - desktop */}
         <div className="hidden md:flex items-center gap-1">
-          {["Análises", "Ao Vivo", "Sugestões", "Bilhetes"].map((item) => (
+          {["Análises", "Ao Vivo", "Sugestões"].map((item) => (
             <button
               key={item}
               className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-200 rounded-lg hover:bg-secondary"
