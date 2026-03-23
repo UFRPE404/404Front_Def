@@ -31,6 +31,7 @@ export const featuredMatches: MatchData[] = [
     scoreA: 1,
     scoreB: 2,
     odds: [2.45, 3.20, 2.90],
+    sport: "Futebol",
   },
   {
     id: slugify("Real Madrid", "Manchester City"),
@@ -39,6 +40,7 @@ export const featuredMatches: MatchData[] = [
     teamA: "Real Madrid",
     teamB: "Manchester City",
     odds: [2.10, 3.40, 3.25],
+    sport: "Futebol",
   },
   {
     id: slugify("Arsenal", "Liverpool"),
@@ -47,6 +49,7 @@ export const featuredMatches: MatchData[] = [
     teamA: "Arsenal",
     teamB: "Liverpool",
     odds: [2.60, 3.10, 2.75],
+    sport: "Futebol",
   },
   {
     id: slugify("Barcelona", "Atlético Madrid"),
@@ -55,6 +58,7 @@ export const featuredMatches: MatchData[] = [
     teamA: "Barcelona",
     teamB: "Atlético Madrid",
     odds: [1.85, 3.50, 4.10],
+    sport: "Futebol",
   },
   {
     id: slugify("Corinthians", "São Paulo"),
@@ -66,6 +70,7 @@ export const featuredMatches: MatchData[] = [
     scoreA: 0,
     scoreB: 0,
     odds: [2.30, 3.15, 3.05],
+    sport: "Futebol",
   },
   {
     id: slugify("Inter Milan", "Juventus"),
@@ -74,6 +79,7 @@ export const featuredMatches: MatchData[] = [
     teamA: "Inter Milan",
     teamB: "Juventus",
     odds: [2.20, 3.30, 3.15],
+    sport: "Futebol",
   },
 ];
 
@@ -180,6 +186,7 @@ export const carouselMatches: MatchData[] = [
     teamA: "Bayern Munich",
     teamB: "Borussia Dortmund",
     odds: [1.75, 3.80, 4.20],
+    sport: "Futebol",
   },
   {
     id: slugify("PSG", "Marseille"),
@@ -188,6 +195,7 @@ export const carouselMatches: MatchData[] = [
     teamA: "PSG",
     teamB: "Marseille",
     odds: [1.50, 4.10, 5.50],
+    sport: "Futebol",
   },
   {
     id: slugify("Sport Recife", "Ceará"),
@@ -196,6 +204,7 @@ export const carouselMatches: MatchData[] = [
     teamA: "Sport Recife",
     teamB: "Ceará",
     odds: [2.40, 3.10, 2.95],
+    sport: "Futebol",
   },
   {
     id: slugify("Grêmio", "Cruzeiro"),
@@ -204,6 +213,7 @@ export const carouselMatches: MatchData[] = [
     teamA: "Grêmio",
     teamB: "Cruzeiro",
     odds: [2.15, 3.25, 3.30],
+    sport: "Futebol",
   },
   {
     id: slugify("Ajax", "PSV"),
@@ -212,6 +222,7 @@ export const carouselMatches: MatchData[] = [
     teamA: "Ajax",
     teamB: "PSV",
     odds: [2.50, 3.30, 2.70],
+    sport: "Futebol",
   },
   {
     id: slugify("Benfica", "Porto"),
@@ -220,6 +231,7 @@ export const carouselMatches: MatchData[] = [
     teamA: "Benfica",
     teamB: "Porto",
     odds: [2.05, 3.40, 3.45],
+    sport: "Futebol",
   },
 ];
 
