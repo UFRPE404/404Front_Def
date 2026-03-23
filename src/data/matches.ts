@@ -233,6 +233,90 @@ export const carouselMatches: MatchData[] = [
     odds: [2.05, 3.40, 3.45],
     sport: "Futebol",
   },
+  {
+    id: slugify("Los Angeles Lakers", "Denver Nuggets"),
+    league: "NBA",
+    time: "19:00",
+    teamA: "Los Angeles Lakers",
+    teamB: "Denver Nuggets",
+    odds: [2.30, 1.95, 1.70],
+    sport: "Basquete",
+  },
+  {
+    id: slugify("Boston Celtics", "Philadelphia 76ers"),
+    league: "NBA",
+    time: "20:30",
+    teamA: "Boston Celtics",
+    teamB: "Philadelphia 76ers",
+    odds: [1.85, 2.10, 1.95],
+    sport: "Basquete",
+  },
+  {
+    id: slugify("Miami Heat", "Chicago Bulls"),
+    league: "NBA",
+    time: "21:00",
+    teamA: "Miami Heat",
+    teamB: "Chicago Bulls",
+    odds: [1.65, 2.20, 2.30],
+    sport: "Basquete",
+  },
+  {
+    id: slugify("Novak Djokovic", "Carlos Alcaraz"),
+    league: "Australian Open",
+    time: "12:00",
+    teamA: "Novak Djokovic",
+    teamB: "Carlos Alcaraz",
+    odds: [2.75, 1.45, 1.55],
+    sport: "Tênis",
+  },
+  {
+    id: slugify("Iga Swiatek", "Aryna Sabalenka"),
+    league: "Australian Open",
+    time: "14:30",
+    teamA: "Iga Swiatek",
+    teamB: "Aryna Sabalenka",
+    odds: [2.45, 1.50, 1.65],
+    sport: "Tênis",
+  },
+  {
+    id: slugify("Jannik Sinner", "Daniil Medvedev"),
+    league: "ATP Finals",
+    time: "16:00",
+    teamA: "Jannik Sinner",
+    teamB: "Daniil Medvedev",
+    odds: [1.95, 1.85, 1.90],
+    sport: "Tênis",
+  },
+];
+
+export const volleyballMatches: MatchData[] = [
+  {
+    id: slugify("Sada Cruzeiro", "Minas Tênis"),
+    league: "Superliga Masculina",
+    time: "19:30",
+    teamA: "Sada Cruzeiro",
+    teamB: "Minas Tênis",
+    odds: [1.85, 2.20, 3.50],
+    sport: "Vôlei",
+  },
+  {
+    id: slugify("Osasco Audax", "Praia Clube"),
+    league: "Superliga Feminina",
+    time: "20:00",
+    teamA: "Osasco Audax",
+    teamB: "Praia Clube",
+    odds: [2.10, 1.95, 3.20],
+    sport: "Vôlei",
+  },
+  {
+    id: slugify("Vedacit Vôlei", "Marechal"),
+    league: "Superliga Masculina",
+    time: "21:00",
+    teamA: "Vedacit Vôlei",
+    teamB: "Marechal",
+    odds: [1.70, 2.50, 3.80],
+    sport: "Vôlei",
+  },
 ];
 
 export interface SuggestedBet {
@@ -356,6 +440,7 @@ export const allMatches: MatchData[] = [
   ...featuredMatches,
   ...liveMatches,
   ...carouselMatches,
+  ...volleyballMatches,
 ];
 
 export function getMatchById(id: string): MatchData | undefined {

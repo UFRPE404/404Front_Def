@@ -4,10 +4,11 @@ import Footer from "@/components/Footer";
 import BetSlip from "@/components/BetSlip";
 import MatchCard from "@/components/MatchCard";
 import LiveSportFilter from "@/components/LiveSportFilter";
-import { liveMatches } from "@/data/matches";
+import { useLiveMatches } from "@/hooks/useMatchesData";
 
 const Live = () => {
   const [activeSport, setActiveSport] = useState("Futebol");
+  const { matches: liveMatches } = useLiveMatches();
 
   // Calculate sport counts
   const sportCounts = useMemo(() => {
@@ -21,7 +22,7 @@ const Live = () => {
     });
 
     return counts;
-  }, []);
+  }, [liveMatches]);
 
   // Filter matches by sport
   const filteredMatches = useMemo(() => {
@@ -29,7 +30,7 @@ const Live = () => {
       return liveMatches;
     }
     return liveMatches.filter((match) => match.sport === activeSport);
-  }, [activeSport]);
+  }, [activeSport, liveMatches]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

@@ -1,9 +1,10 @@
 import { Timer } from "lucide-react";
 import { Link } from "react-router-dom";
 import MatchCard from "./MatchCard";
-import { liveMatches } from "@/data/matches";
+import { useLiveMatches } from "@/hooks/useMatchesData";
 
 const LiveMatches = () => {
+  const { matches: liveMatches } = useLiveMatches();
   return (
     <section className="px-4 mt-8">
       <div className="flex items-center justify-between mb-4">

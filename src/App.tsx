@@ -8,6 +8,7 @@ import Index from "./pages/Index.tsx";
 import Analytics from "./pages/Analytics.tsx";
 import Live from "./pages/Live.tsx";
 import Suggestions from "./pages/Suggestions.tsx";
+import Sports from "./pages/Sports.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/sugestoes" element={<Suggestions />} />
+            <Route path="/esportes" element={<Sports />} />
             <Route path="/ao-vivo" element={<Live />} />
             <Route path="/analises/:matchId" element={<Analytics />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

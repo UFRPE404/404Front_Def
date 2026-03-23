@@ -1,9 +1,11 @@
 import { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import SuggestedBetCard from "./SuggestedBetCard";
-import { dreamBets, bestOfDayBets } from "@/data/matches";
+import { useDreamBets, useBestOfDayBets } from "@/hooks/useSuggestedBets";
 
 const SuggestedBets = () => {
+  const { bets: dreamBets } = useDreamBets();
+  const { bets: bestOfDayBets } = useBestOfDayBets();
   const dreamScrollRef = useRef<HTMLDivElement>(null);
   const bestScrollRef = useRef<HTMLDivElement>(null);
 

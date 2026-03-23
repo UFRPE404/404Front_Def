@@ -1,9 +1,10 @@
 import { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import MatchCard from "./MatchCard";
-import { carouselMatches } from "@/data/matches";
+import { useCarouselMatches } from "@/hooks/useMatchesData";
 
 const GamesCarousel = () => {
+  const { matches: carouselMatches } = useCarouselMatches();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (dir: "left" | "right") => {
