@@ -40,6 +40,56 @@ export interface MatchStats {
   saves: [number, number];
 }
 
+export interface BasketballStats {
+  fieldGoalsMade: [number, number];
+  fieldGoalsAttempted: [number, number];
+  fieldGoalPercentage: [number, number];
+  threePointersMade: [number, number];
+  threePointersAttempted: [number, number];
+  threePointPercentage: [number, number];
+  freeThrowsMade: [number, number];
+  freeThrowsAttempted: [number, number];
+  freeThrowPercentage: [number, number];
+  rebounds: [number, number];
+  offensiveRebounds: [number, number];
+  defensiveRebounds: [number, number];
+  assists: [number, number];
+  fouls: [number, number];
+  steals: [number, number];
+  blocks: [number, number];
+  turnovers: [number, number];
+  points: [number, number];
+}
+
+export interface TennisStats {
+  aces: [number, number];
+  doubleFaults: [number, number];
+  firstServePercentage: [number, number];
+  firstServeWinPercentage: [number, number];
+  secondServeWinPercentage: [number, number];
+  breakPointsWon: [number, number];
+  breakPointsAttempted: [number, number];
+  totalPointsWon: [number, number];
+  maxSpeed: [number, number];
+  totalShots: [number, number];
+  winners: [number, number];
+  unforceErrors: [number, number];
+  netRushes: [number, number];
+}
+
+export interface VolleyballStats {
+  aces: [number, number];
+  kills: [number, number];
+  totalAttacks: [number, number];
+  blockingPoints: [number, number];
+  digs: [number, number];
+  receptions: [number, number];
+  sets: [number, number];
+  errors: [number, number];
+  points: [number, number];
+  setsWon: [number, number];
+}
+
 export interface MatchDetails {
   stadium: string;
   referee: string;
@@ -50,10 +100,13 @@ export interface MatchDetails {
   awayLineup: TeamLineup;
   events: MatchEvent[];
   stats: MatchStats;
+  basketballStats?: BasketballStats;
+  tennisStats?: TennisStats;
+  volleyballStats?: VolleyballStats;
 }
 
 // Deterministic lineup generator based on team name
-function generateLineup(teamName: string, isHome: boolean): TeamLineup {
+function generateLineup(teamName: string, sport: string = "Futebol"): TeamLineup {
   const lineups: Record<string, { formation: string; coach: string; players: Player[]; subs: Player[] }> = {
     "Flamengo": {
       formation: "4-3-3",
@@ -154,48 +207,78 @@ function generateLineup(teamName: string, isHome: boolean): TeamLineup {
   };
 
   // Generic fallback lineup generator
-  const generic = generateGenericLineup(teamName);
+  const generic = generateGenericLineup(teamName, sport);
   const known = lineups[teamName];
   if (known) {
-    return { formation: known.formation, coach: known.coach, players: known.players, substitutes: known.subs };
+    const lineup = { formation: known.formation, coach: known.coach, players: known.players, substitutes: known.subs };
+    // Ajustar número de jogadores por esporte
+    if (sport === "Basquete") {
+      return { ...lineup, players: lineup.players.slice(0, 5), formation: "" };
+    } else if (sport === "Vôlei") {
+      return { ...lineup, players: lineup.players.slice(0, 6), formation: "" };
+    } else if (sport === "Tênis") {
+      return { ...lineup, players: [], formation: "", substitutes: [] };
+    }
+    return lineup;
   }
   return generic;
 }
 
-function generateGenericLineup(teamName: string): TeamLineup {
+function generateGenericLineup(teamName: string, sport: string = "Futebol"): TeamLineup {
   const seed = teamName.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const formations = ["4-3-3", "4-4-2", "3-5-2", "4-2-3-1"];
-  const formation = formations[seed % formations.length];
+  const formations = sport === "Futebol" ? ["4-3-3", "4-4-2", "3-5-2", "4-2-3-1"] : [];
+  const formation = formations[seed % formations.length] || "";
   const coaches = ["Roberto Mancini", "Diego Simeone", "Thomas Tuchel", "Luis Enrique", "Marco Rose", "Xavi Hernández", "Unai Emery", "Simone Inzaghi"];
   const coach = coaches[seed % coaches.length];
 
-  const positions = ["GOL", "LD", "ZAG", "ZAG", "LE", "VOL", "MC", "MC", "PD", "CA", "PE"];
+  // Determine positions based on sport
+  let positions: string[];
+  let playerCount: number;
+  let subCount: number;
+
+  if (sport === "Basquete") {
+    positions = ["Base", "Escolta", "Ala", "Ala-Pivô", "Pivô"];
+    playerCount = 5;
+    subCount = 5;
+  } else if (sport === "Vôlei") {
+    positions = ["Levantador", "Central", "Central", "Oposto", "Ponta", "Ponta"];
+    playerCount = 6;
+    subCount = 5;
+  } else if (sport === "Tênis") {
+    return { formation: "", coach: "", players: [], substitutes: [] };
+  } else {
+    // Futebol
+    positions = ["GOL", "LD", "ZAG", "ZAG", "LE", "VOL", "MC", "MC", "PD", "CA", "PE"];
+    playerCount = 11;
+    subCount = 5;
+  }
+
   const firstNames = ["Lucas", "Gabriel", "Matheus", "Rafael", "Bruno", "André", "Carlos", "Diego", "Thiago", "Felipe", "João"];
   const lastNames = ["Silva", "Santos", "Oliveira", "Souza", "Lima", "Ferreira", "Almeida", "Ribeiro", "Costa", "Rodrigues", "Pereira"];
 
   const r = (i: number) => ((seed * (i + 1) * 13) % 100);
 
-  const players: Player[] = positions.map((pos, i) => ({
+  const players: Player[] = Array.from({ length: playerCount }, (_, i) => ({
     name: `${firstNames[(seed + i) % firstNames.length]} ${lastNames[(seed + i + 3) % lastNames.length]}`,
-    number: ((seed + i * 7) % 30) + 1,
-    position: pos,
+    number: i + 1,
+    position: positions[i] || positions[0],
     age: 20 + (r(i) % 16),
-    goals: pos === "GOL" ? 0 : r(i) % (pos === "CA" ? 20 : 8),
+    goals: sport === "Basquete" ? r(i) % 30 : sport === "Vôlei" ? r(i) % 15 : (positions[i]?.includes("GOL") ? 0 : r(i) % 8),
     assists: r(i + 1) % 10,
-    yellowCards: r(i + 2) % 7,
-    redCards: r(i + 3) % 2,
-    minutesPlayed: 900 + (r(i + 4) % 1600),
-    rating: +(6.0 + (r(i + 5) % 30) / 10).toFixed(1),
+    yellowCards: sport === "Tênis" ? 0 : r(i + 2) % 7,
+    redCards: sport === "Tênis" ? 0 : r(i + 3) % 2,
+    minutesPlayed: sport === "Basquete" || sport === "Vôlei" ? 1800 + (r(i + 4) % 800) : 900 + (r(i + 4) % 1600),
+    rating: +(6.5 + (r(i + 5) % 25) / 10).toFixed(1),
   }));
 
-  const subs: Player[] = Array.from({ length: 5 }, (_, i) => ({
+  const subs: Player[] = Array.from({ length: subCount }, (_, i) => ({
     name: `${firstNames[(seed + i + 5) % firstNames.length]} ${lastNames[(seed + i + 8) % lastNames.length]}`,
-    number: ((seed + i * 3 + 20) % 30) + 1,
-    position: ["GOL", "ZAG", "MC", "ATA", "PE"][i],
+    number: playerCount + i + 1,
+    position: sport === "Basquete" ? "Ala" : sport === "Vôlei" ? "Ponta" : ["GOL", "ZAG", "MC", "ATA", "PE"][i],
     age: 19 + (r(i + 20) % 17),
-    goals: r(i + 21) % 6,
+    goals: sport === "Basquete" ? r(i + 21) % 20 : sport === "Vôlei" ? r(i + 21) % 8 : r(i + 21) % 6,
     assists: r(i + 22) % 5,
-    yellowCards: r(i + 23) % 4,
+    yellowCards: sport === "Tênis" ? 0 : r(i + 23) % 4,
     redCards: 0,
     minutesPlayed: 90 + (r(i + 24) % 900),
     rating: +(6.0 + (r(i + 25) % 25) / 10).toFixed(1),
@@ -242,7 +325,68 @@ function generateMatchStats(odds: [number, number, number]): MatchStats {
   };
 }
 
-export function getMatchDetails(teamA: string, teamB: string, scoreA?: number, scoreB?: number, odds: [number, number, number] = [2, 3, 3]): MatchDetails {
+function generateBasketballStats(odds: [number, number, number]): BasketballStats {
+  const homeBias = odds[0] < odds[2] ? 1.1 : 0.9;
+  const homeShots = Math.round(62 * homeBias);
+  const awayShots = Math.round(58 * (2 - homeBias));
+  return {
+    fieldGoalsMade: [Math.round(homeShots * 0.42), Math.round(awayShots * 0.40)],
+    fieldGoalsAttempted: [homeShots, awayShots],
+    fieldGoalPercentage: [42, 40],
+    threePointersMade: [Math.round(homeShots * 0.15), Math.round(awayShots * 0.14)],
+    threePointersAttempted: [Math.round(homeShots * 0.35), Math.round(awayShots * 0.35)],
+    threePointPercentage: [43, 40],
+    freeThrowsMade: [Math.round(homeShots * 0.14), Math.round(awayShots * 0.12)],
+    freeThrowsAttempted: [Math.round(homeShots * 0.16), Math.round(awayShots * 0.15)],
+    freeThrowPercentage: [88, 80],
+    rebounds: [Math.round(40 * homeBias), Math.round(38 * (2 - homeBias))],
+    offensiveRebounds: [Math.round(12 * homeBias), Math.round(10 * (2 - homeBias))],
+    defensiveRebounds: [Math.round(28 * homeBias), Math.round(28 * (2 - homeBias))],
+    assists: [Math.round(24 * homeBias), Math.round(22 * (2 - homeBias))],
+    fouls: [Math.round(16 * (2 - homeBias)), Math.round(18 * homeBias)],
+    steals: [Math.round(8 * homeBias), Math.round(7 * (2 - homeBias))],
+    blocks: [Math.round(5 * homeBias), Math.round(4 * (2 - homeBias))],
+    turnovers: [Math.round(14 * (2 - homeBias)), Math.round(16 * homeBias)],
+    points: [Math.round((homeShots * 0.42 * 2 + homeShots * 0.15 * 3 + homeShots * 0.14 * 1)), Math.round((awayShots * 0.40 * 2 + awayShots * 0.14 * 3 + awayShots * 0.12 * 1))],
+  };
+}
+
+function generateTennisStats(odds: [number, number, number]): TennisStats {
+  const firstServerAdvantage = odds[0] < odds[2] ? 1.15 : 0.85;
+  return {
+    aces: [Math.round(8 * firstServerAdvantage), Math.round(6 * (2 - firstServerAdvantage))],
+    doubleFaults: [Math.round(2 * (2 - firstServerAdvantage)), Math.round(3 * firstServerAdvantage)],
+    firstServePercentage: [Math.round(65 * firstServerAdvantage), Math.round(62 * (2 - firstServerAdvantage))],
+    firstServeWinPercentage: [Math.round(72 * firstServerAdvantage), Math.round(68 * (2 - firstServerAdvantage))],
+    secondServeWinPercentage: [Math.round(55 * firstServerAdvantage), Math.round(52 * (2 - firstServerAdvantage))],
+    breakPointsWon: [Math.round(3 * firstServerAdvantage), Math.round(2 * (2 - firstServerAdvantage))],
+    breakPointsAttempted: [Math.round(6 * firstServerAdvantage), Math.round(7 * (2 - firstServerAdvantage))],
+    totalPointsWon: [Math.round(95 * firstServerAdvantage), Math.round(88 * (2 - firstServerAdvantage))],
+    maxSpeed: [195 + Math.round(15 * firstServerAdvantage), 188 + Math.round(12 * (2 - firstServerAdvantage))],
+    totalShots: [Math.round(156 * firstServerAdvantage), Math.round(148 * (2 - firstServerAdvantage))],
+    winners: [Math.round(38 * firstServerAdvantage), Math.round(32 * (2 - firstServerAdvantage))],
+    unforceErrors: [Math.round(24 * (2 - firstServerAdvantage)), Math.round(28 * firstServerAdvantage)],
+    netRushes: [Math.round(18 * firstServerAdvantage), Math.round(14 * (2 - firstServerAdvantage))],
+  };
+}
+
+function generateVolleyballStats(odds: [number, number, number]): VolleyballStats {
+  const homeAttackAdvantage = odds[0] < odds[2] ? 1.12 : 0.88;
+  return {
+    aces: [Math.round(7 * homeAttackAdvantage), Math.round(5 * (2 - homeAttackAdvantage))],
+    kills: [Math.round(28 * homeAttackAdvantage), Math.round(24 * (2 - homeAttackAdvantage))],
+    totalAttacks: [Math.round(65 * homeAttackAdvantage), Math.round(62 * (2 - homeAttackAdvantage))],
+    blockingPoints: [Math.round(6 * homeAttackAdvantage), Math.round(5 * (2 - homeAttackAdvantage))],
+    digs: [Math.round(32 * (2 - homeAttackAdvantage)), Math.round(36 * homeAttackAdvantage)],
+    receptions: [Math.round(28 * (2 - homeAttackAdvantage)), Math.round(32 * homeAttackAdvantage)],
+    sets: [Math.round(22 * homeAttackAdvantage), Math.round(20 * (2 - homeAttackAdvantage))],
+    errors: [Math.round(12 * (2 - homeAttackAdvantage)), Math.round(14 * homeAttackAdvantage)],
+    points: [Math.round(65 * homeAttackAdvantage), Math.round(58 * (2 - homeAttackAdvantage))],
+    setsWon: [2, 1],
+  };
+}
+
+export function getMatchDetails(teamA: string, teamB: string, scoreA?: number, scoreB?: number, odds: [number, number, number] = [2, 3, 3], sport: string = "Futebol"): MatchDetails {
   const stadiums: Record<string, string> = {
     "Flamengo": "Maracanã, Rio de Janeiro",
     "Palmeiras": "Allianz Parque, São Paulo",
@@ -259,15 +403,26 @@ export function getMatchDetails(teamA: string, teamB: string, scoreA?: number, s
     "Benfica": "Estádio da Luz, Lisboa",
   };
 
-  return {
+  const matchDetails: MatchDetails = {
     stadium: stadiums[teamA] || "Estádio Nacional",
     referee: "Wilton Pereira Sampaio",
     weather: "Parcialmente nublado",
     temperature: "24°C",
     attendance: `${Math.floor(30000 + Math.random() * 40000).toLocaleString("pt-BR")}`,
-    homeLineup: generateLineup(teamA, true),
-    awayLineup: generateLineup(teamB, false),
+    homeLineup: generateLineup(teamA, sport),
+    awayLineup: generateLineup(teamB, sport),
     events: generateMatchEvents(teamA, teamB, scoreA, scoreB),
     stats: generateMatchStats(odds),
   };
+
+  // Generate sport-specific stats
+  if (sport === "Basquete") {
+    matchDetails.basketballStats = generateBasketballStats(odds);
+  } else if (sport === "Tênis") {
+    matchDetails.tennisStats = generateTennisStats(odds);
+  } else if (sport === "Vôlei") {
+    matchDetails.volleyballStats = generateVolleyballStats(odds);
+  }
+
+  return matchDetails;
 }

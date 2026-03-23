@@ -15,6 +15,8 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { getMatchById, type MatchData } from "@/data/matches";
 import { getMatchDetails, type Player, type MatchEvent } from "@/data/matchDetails";
+import { StatBar } from "@/components/StatBars";
+import { FootballStatsView, BasketballStatsView, TennisStatsView, VolleyballStatsView } from "@/components/SportStatsViews";
 
 /* ─── Reveal animation ─── */
 function useReveal() {
@@ -59,25 +61,6 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
       {payload.map((p, i) => (
         <p key={i} style={{ color: p.color }}>{p.name}: <span className="font-bold">{p.value}</span></p>
       ))}
-    </div>
-  );
-};
-
-/* ─── Stat Bar (horizontal comparison) ─── */
-const StatBar = ({ label, home, away, unit = "" }: { label: string; home: number; away: number; unit?: string }) => {
-  const total = home + away || 1;
-  const homePct = (home / total) * 100;
-  return (
-    <div className="space-y-1.5">
-      <div className="flex justify-between text-sm">
-        <span className="font-semibold text-foreground">{home}{unit}</span>
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <span className="font-semibold text-foreground">{away}{unit}</span>
-      </div>
-      <div className="flex h-1.5 rounded-full overflow-hidden gap-0.5">
-        <div className="rounded-full transition-all duration-700" style={{ width: `${homePct}%`, background: "hsl(var(--primary))" }} />
-        <div className="rounded-full flex-1 transition-all duration-700" style={{ background: "hsl(220, 20%, 45%)" }} />
-      </div>
     </div>
   );
 };
@@ -175,22 +158,58 @@ function generateOddsData(match: MatchData) {
    ═══════════════════════════════════ */
 type TabKey = "partida" | "escalacoes" | "estatisticas" | "confrontos" | "odds" | "jogadores";
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "partida", label: "Partida" },
-  { key: "escalacoes", label: "Escalações" },
-  { key: "estatisticas", label: "Estatísticas" },
-  { key: "confrontos", label: "Confrontos" },
-  { key: "odds", label: "Odds" },
-  { key: "jogadores", label: "Jogadores" },
-];
+const getTabsForSport = (sport?: string): { key: TabKey; label: string }[] => {
+  const baseTabs = [
+    { key: "partida", label: "Partida" },
+    { key: "estatisticas", label: "Estatísticas" },
+    { key: "confrontos", label: "Confrontos" },
+    { key: "odds", label: "Odds" },
+  ];
+
+  switch (sport) {
+    case "Basquete":
+      return [
+        { key: "partida", label: "Partida" },
+        { key: "estatisticas", label: "Estatísticas" },
+        { key: "confrontos", label: "Confrontos" },
+        { key: "odds", label: "Odds" },
+        { key: "jogadores", label: "Elenco" },
+      ];
+    case "Tênis":
+      return [
+        { key: "partida", label: "Partida" },
+        { key: "estatisticas", label: "Estatísticas" },
+        { key: "confrontos", label: "Histórico" },
+        { key: "odds", label: "Odds" },
+      ];
+    case "Vôlei":
+      return [
+        { key: "partida", label: "Partida" },
+        { key: "escalacoes", label: "Escalação" },
+        { key: "estatisticas", label: "Estatísticas" },
+        { key: "confrontos", label: "Confrontos" },
+        { key: "odds", label: "Odds" },
+        { key: "jogadores", label: "Elenco" },
+      ];
+    default: // Futebol
+      return [
+        { key: "partida", label: "Partida" },
+        { key: "escalacoes", label: "Escalações" },
+        { key: "estatisticas", label: "Estatísticas" },
+        { key: "confrontos", label: "Confrontos" },
+        { key: "odds", label: "Odds" },
+        { key: "jogadores", label: "Jogadores" },
+      ];
+  }
+};
 
 const Analytics = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabKey>("partida");
-  const [selectedTeam, setSelectedTeam] = useState<"home" | "away">("home");
-
   const match = matchId ? getMatchById(decodeURIComponent(matchId)) : undefined;
+  const availableTabs = getTabsForSport(match?.sport);
+  const [activeTab, setActiveTab] = useState<TabKey>(availableTabs[0]?.key || "partida");
+  const [selectedTeam, setSelectedTeam] = useState<"home" | "away">("home");
 
   if (!match) {
     return (
@@ -208,7 +227,7 @@ const Analytics = () => {
     );
   }
 
-  const details = getMatchDetails(match.teamA, match.teamB, match.scoreA, match.scoreB, match.odds);
+  const details = getMatchDetails(match.teamA, match.teamB, match.scoreA, match.scoreB, match.odds, match.sport || "Futebol");
   const { radarData, h2hResults } = generateH2hData(match);
   const oddsMovement = generateOddsData(match);
 
@@ -314,7 +333,7 @@ const Analytics = () => {
         {/* ── TABS ── */}
         <RevealSection delay={60}>
           <div className="flex gap-1 p-1 rounded-xl overflow-x-auto" style={{ background: "hsl(var(--secondary))", scrollbarWidth: "none" }}>
-            {TABS.map(({ key, label }) => (
+            {availableTabs.map(({ key, label }) => (
               <button
                 key={key}
                 onClick={() => setActiveTab(key)}
@@ -328,71 +347,259 @@ const Analytics = () => {
 
         {/* ═══════════ TAB: PARTIDA ═══════════ */}
         {activeTab === "partida" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-            {/* Events Timeline */}
-            <RevealSection className="lg:col-span-2">
-              <div className="match-card space-y-4">
-                <h2 className="text-base font-semibold text-foreground">Eventos da Partida</h2>
-                <div className="space-y-0">
-                  {details.events.length === 0 ? (
-                    <p className="text-sm text-muted-foreground py-4 text-center">Aguardando início da partida...</p>
-                  ) : (
-                    details.events.map((ev, i) => (
-                      <div key={i} className={`flex items-center gap-3 py-3 ${i > 0 ? "border-t border-border/50" : ""}`}>
-                        {ev.team === "home" ? (
-                          <>
-                            <span className="text-sm text-foreground flex-1 text-right">{ev.player}</span>
-                            <EventIcon type={ev.type} />
-                            <span className="text-xs font-mono text-muted-foreground w-10 text-center">{ev.minute}'</span>
-                            <div className="flex-1" />
-                          </>
-                        ) : (
-                          <>
-                            <div className="flex-1" />
-                            <span className="text-xs font-mono text-muted-foreground w-10 text-center">{ev.minute}'</span>
-                            <EventIcon type={ev.type} />
-                            <span className="text-sm text-foreground flex-1">{ev.player}</span>
-                          </>
-                        )}
+          match?.sport === "Tênis" ? (
+            /* TENNIS MATCH VIEW */
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+              <RevealSection className="lg:col-span-2">
+                <div className="match-card space-y-6">
+                  <h2 className="text-base font-semibold text-foreground">Resultado dos Sets</h2>
+                  <div className="space-y-3">
+                    {[
+                      { set: 1, home: "6", away: "4" },
+                      { set: 2, home: "7", away: "5" },
+                      { set: 3, home: "6", away: "3" },
+                    ].map((s, i) => (
+                      <div key={i} className="flex items-center justify-between p-4 rounded-lg" style={{ background: "hsl(var(--secondary))" }}>
+                        <div className="flex-1">
+                          <p className="text-xs text-muted-foreground mb-1">Set {s.set}</p>
+                          <div className="flex items-center gap-6">
+                            <div className="flex-1">
+                              <p className="text-sm text-muted-foreground">{match.teamA}</p>
+                              <p className="text-2xl font-bold text-primary">{s.home}</p>
+                            </div>
+                            <span className="text-muted-foreground">-</span>
+                            <div className="flex-1">
+                              <p className="text-sm text-muted-foreground text-right">{match.teamB}</p>
+                              <p className="text-2xl font-bold text-right text-foreground">{s.away}</p>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </RevealSection>
+                    ))}
+                  </div>
 
-            {/* Quick Stats + Insight */}
-            <div className="space-y-4">
-              <RevealSection delay={80}>
-                <div className="match-card space-y-4">
-                  <h3 className="text-sm font-semibold text-foreground">Resumo</h3>
-                  <StatBar label="Posse de Bola" home={details.stats.possession[0]} away={details.stats.possession[1]} unit="%" />
-                  <StatBar label="Finalizações" home={details.stats.shots[0]} away={details.stats.shots[1]} />
-                  <StatBar label="No Gol" home={details.stats.shotsOnTarget[0]} away={details.stats.shotsOnTarget[1]} />
-                  <StatBar label="Escanteios" home={details.stats.corners[0]} away={details.stats.corners[1]} />
+                  <div className="pt-4 border-t border-border">
+                    <h3 className="text-sm font-semibold text-foreground mb-3">Informações do Match</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Duração:</span>
+                        <span className="text-foreground font-medium">2h 35min</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Quadra:</span>
+                        <span className="text-foreground font-medium">Hard Court</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Pontuação Final:</span>
+                        <span className="text-foreground font-medium">{match.scoreA} - {match.scoreB}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </RevealSection>
 
-              <RevealSection delay={140}>
-                <div className="match-card flex items-start gap-3" style={{ borderColor: "hsl(var(--primary) / 0.25)" }}>
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "hsl(var(--primary) / 0.12)" }}>
-                    <Zap className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-semibold text-foreground mb-1">Palpite IA</h4>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Favorito: <strong className="text-primary">{favLabel}</strong> com {winProb}% de probabilidade implícita.{" "}
-                      {details.stats.possession[0] > 50 ? `${match.teamA} domina a posse.` : `${match.teamB} controla mais a bola.`}
-                    </p>
-                  </div>
+              <RevealSection delay={80}>
+                <div className="match-card space-y-4">
+                  <h3 className="text-sm font-semibold text-foreground">Destaques</h3>
+                  <StatBar label="Aces" home={18} away={12} />
+                  <StatBar label="Break Points %" home={65} away={40} unit="%" />
+                  <StatBar label="1º Saque %" home={72} away={68} unit="%" />
+                  <StatBar label="Vencedoras" home={42} away={35} />
                 </div>
               </RevealSection>
             </div>
-          </div>
+          ) : match?.sport === "Basquete" ? (
+            /* BASKETBALL MATCH VIEW */
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+              <RevealSection className="lg:col-span-2">
+                <div className="match-card space-y-6">
+                  <h2 className="text-base font-semibold text-foreground">Resultado por Quarto</h2>
+                  <div className="space-y-3">
+                    {[
+                      { quarter: "1º", home: "24", away: "18" },
+                      { quarter: "2º", home: "22", away: "20" },
+                      { quarter: "3º", home: "26", away: "28" },
+                      { quarter: "4º", home: "20", away: "19" },
+                    ].map((q, i) => (
+                      <div key={i} className="flex items-center justify-between p-4 rounded-lg" style={{ background: "hsl(var(--secondary))" }}>
+                        <div className="flex-1">
+                          <p className="text-xs text-muted-foreground mb-1">{q.quarter}</p>
+                          <div className="flex items-center gap-6">
+                            <div className="flex-1">
+                              <p className="text-sm text-muted-foreground">{match.teamA}</p>
+                              <p className="text-2xl font-bold text-primary">{q.home}</p>
+                            </div>
+                            <span className="text-muted-foreground">-</span>
+                            <div className="flex-1">
+                              <p className="text-sm text-muted-foreground text-right">{match.teamB}</p>
+                              <p className="text-2xl font-bold text-right text-foreground">{q.away}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-4 border-t border-border">
+                    <h3 className="text-sm font-semibold text-foreground mb-3">Informações do Jogo</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Local:</span>
+                        <span className="text-foreground font-medium">{details.stadium}</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Árbitro Principal:</span>
+                        <span className="text-foreground font-medium">{details.referee}</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Público:</span>
+                        <span className="text-foreground font-medium">{details.attendance}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </RevealSection>
+
+              <RevealSection delay={80}>
+                <div className="match-card space-y-4">
+                  <h3 className="text-sm font-semibold text-foreground">Destaques</h3>
+                  <StatBar label="FG %" home={48} away={42} unit="%" />
+                  <StatBar label="3P %" home={36} away={31} unit="%" />
+                  <StatBar label="Rebotes" home={52} away={45} />
+                  <StatBar label="Assistências" home={28} away={24} />
+                </div>
+              </RevealSection>
+            </div>
+          ) : match?.sport === "Vôlei" ? (
+            /* VOLLEYBALL MATCH VIEW */
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+              <RevealSection className="lg:col-span-2">
+                <div className="match-card space-y-6">
+                  <h2 className="text-base font-semibold text-foreground">Resultado dos Sets</h2>
+                  <div className="space-y-3">
+                    {[
+                      { set: 1, home: "25", away: "20" },
+                      { set: 2, home: "25", away: "22" },
+                      { set: 3, home: "24", away: "26" },
+                      { set: 4, home: "25", away: "23" },
+                    ].map((s, i) => (
+                      <div key={i} className="flex items-center justify-between p-4 rounded-lg" style={{ background: "hsl(var(--secondary))" }}>
+                        <div className="flex-1">
+                          <p className="text-xs text-muted-foreground mb-1">Set {s.set}</p>
+                          <div className="flex items-center gap-6">
+                            <div className="flex-1">
+                              <p className="text-sm text-muted-foreground">{match.teamA}</p>
+                              <p className="text-2xl font-bold text-primary">{s.home}</p>
+                            </div>
+                            <span className="text-muted-foreground">-</span>
+                            <div className="flex-1">
+                              <p className="text-sm text-muted-foreground text-right">{match.teamB}</p>
+                              <p className="text-2xl font-bold text-right text-foreground">{s.away}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-4 border-t border-border">
+                    <h3 className="text-sm font-semibold text-foreground mb-3">Informações da Partida</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Ginásio:</span>
+                        <span className="text-foreground font-medium">{details.stadium}</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Árbitro:</span>
+                        <span className="text-foreground font-medium">{details.referee}</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Público:</span>
+                        <span className="text-foreground font-medium">{details.attendance}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </RevealSection>
+
+              <RevealSection delay={80}>
+                <div className="match-card space-y-4">
+                  <h3 className="text-sm font-semibold text-foreground">Destaques</h3>
+                  <StatBar label="Kills" home={58} away={52} />
+                  <StatBar label="Aces" home={8} away={6} />
+                  <StatBar label="Bloqueios" home={12} away={10} />
+                  <StatBar label="Erros" home={14} away={18} />
+                </div>
+              </RevealSection>
+            </div>
+          ) : (
+            /* FOOTBALL MATCH VIEW (DEFAULT) */
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+              {/* Events Timeline */}
+              <RevealSection className="lg:col-span-2">
+                <div className="match-card space-y-4">
+                  <h2 className="text-base font-semibold text-foreground">Eventos da Partida</h2>
+                  <div className="space-y-0">
+                    {details.events.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-4 text-center">Aguardando início da partida...</p>
+                    ) : (
+                      details.events.map((ev, i) => (
+                        <div key={i} className={`flex items-center gap-3 py-3 ${i > 0 ? "border-t border-border/50" : ""}`}>
+                          {ev.team === "home" ? (
+                            <>
+                              <span className="text-sm text-foreground flex-1 text-right">{ev.player}</span>
+                              <EventIcon type={ev.type} />
+                              <span className="text-xs font-mono text-muted-foreground w-10 text-center">{ev.minute}'</span>
+                              <div className="flex-1" />
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex-1" />
+                              <span className="text-xs font-mono text-muted-foreground w-10 text-center">{ev.minute}'</span>
+                              <EventIcon type={ev.type} />
+                              <span className="text-sm text-foreground flex-1">{ev.player}</span>
+                            </>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </RevealSection>
+
+              {/* Quick Stats + Insight */}
+              <div className="space-y-4">
+                <RevealSection delay={80}>
+                  <div className="match-card space-y-4">
+                    <h3 className="text-sm font-semibold text-foreground">Resumo</h3>
+                    <StatBar label="Posse de Bola" home={details.stats.possession[0]} away={details.stats.possession[1]} unit="%" />
+                    <StatBar label="Finalizações" home={details.stats.shots[0]} away={details.stats.shots[1]} />
+                    <StatBar label="No Gol" home={details.stats.shotsOnTarget[0]} away={details.stats.shotsOnTarget[1]} />
+                    <StatBar label="Escanteios" home={details.stats.corners[0]} away={details.stats.corners[1]} />
+                  </div>
+                </RevealSection>
+
+                <RevealSection delay={140}>
+                  <div className="match-card flex items-start gap-3" style={{ borderColor: "hsl(var(--primary) / 0.25)" }}>
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "hsl(var(--primary) / 0.12)" }}>
+                      <Zap className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-semibold text-foreground mb-1">Palpite IA</h4>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Favorito: <strong className="text-primary">{favLabel}</strong> com {winProb}% de probabilidade implícita.{" "}
+                        {details.stats.possession[0] > 50 ? `${match.teamA} domina a posse.` : `${match.teamB} controla mais a bola.`}
+                      </p>
+                    </div>
+                  </div>
+                </RevealSection>
+              </div>
+            </div>
+          )
         )}
 
         {/* ═══════════ TAB: ESCALAÇÕES ═══════════ */}
-        {activeTab === "escalacoes" && (
+        {activeTab === "escalacoes" && (match?.sport === "Futebol" || match?.sport === "Vôlei") && (
           <div className="space-y-8">
             <RevealSection>
               <div className="flex gap-2">
@@ -401,21 +608,21 @@ const Analytics = () => {
                   className={`flex-1 py-3 rounded-lg text-sm font-semibold transition-all ${selectedTeam === "home" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                   style={selectedTeam !== "home" ? { background: "hsl(var(--secondary))" } : undefined}
                 >
-                  {match.teamA} ({details.homeLineup.formation})
+                  {match.teamA} {match?.sport === "Futebol" ? `(${details.homeLineup.formation})` : "(Titular)"}
                 </button>
                 <button
                   onClick={() => setSelectedTeam("away")}
                   className={`flex-1 py-3 rounded-lg text-sm font-semibold transition-all ${selectedTeam === "away" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                   style={selectedTeam !== "away" ? { background: "hsl(var(--secondary))" } : undefined}
                 >
-                  {match.teamB} ({details.awayLineup.formation})
+                  {match.teamB} {match?.sport === "Futebol" ? `(${details.awayLineup.formation})` : "(Titular)"}
                 </button>
               </div>
             </RevealSection>
 
             {(() => {
               const lineup = selectedTeam === "home" ? details.homeLineup : details.awayLineup;
-              return (
+              return match?.sport === "Futebol" ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
                   {/* Formation Visual — LEFT */}
                   <RevealSection delay={60}>
@@ -448,7 +655,6 @@ const Analytics = () => {
                             }
                             const totalRows = rows.length;
                             return rows.map((row, rowIdx) => {
-                              // Remover offset extra da última linha para não empurrar atacantes para fora
                               const yPercent = 8 + (rowIdx / (totalRows - 1)) * 80;
                               return (
                                 <div key={rowIdx} className="absolute left-0 right-0 flex justify-center" style={{ top: `${yPercent}%` }}>
@@ -494,6 +700,30 @@ const Analytics = () => {
                     </div>
                   </RevealSection>
                 </div>
+              ) : (
+                /* VOLLEYBALL LINEUP VIEW */
+                <div className="space-y-4">
+                  <div className="match-card space-y-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-base font-semibold text-foreground">Escalação</h2>
+                      <span className="text-xs text-muted-foreground flex items-center gap-1"><User className="w-3 h-3" /> {lineup.coach}</span>
+                    </div>
+                    <div className="space-y-3">
+                      {lineup.players.map((p, i) => (
+                        <div key={i} className="flex items-center gap-4 p-3 rounded-lg" style={{ background: "hsl(var(--secondary))" }}>
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}>
+                            {p.number}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground">{p.name}</p>
+                            <p className="text-xs text-muted-foreground">{p.position} • {p.age} anos</p>
+                          </div>
+                          <span className="text-xs font-bold text-primary">{p.rating}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               );
             })()}
           </div>
@@ -501,60 +731,31 @@ const Analytics = () => {
 
         {/* ═══════════ TAB: ESTATÍSTICAS ═══════════ */}
         {activeTab === "estatisticas" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+          <div className="space-y-6">
             <RevealSection>
-              <div className="match-card space-y-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-foreground">{match.teamA}</span>
-                  <h2 className="text-base font-semibold text-foreground">Estatísticas</h2>
-                  <span className="text-sm font-bold text-foreground">{match.teamB}</span>
+              <div className="match-card space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2 h-2 rounded-full bg-primary"></div>
+                  <span className="text-sm font-bold text-foreground">{match.sport || "Futebol"} - Estatísticas</span>
                 </div>
-                <StatBar label="Posse de Bola" home={details.stats.possession[0]} away={details.stats.possession[1]} unit="%" />
-                <StatBar label="Total de Chutes" home={details.stats.shots[0]} away={details.stats.shots[1]} />
-                <StatBar label="Chutes no Gol" home={details.stats.shotsOnTarget[0]} away={details.stats.shotsOnTarget[1]} />
-                <StatBar label="Escanteios" home={details.stats.corners[0]} away={details.stats.corners[1]} />
-                <StatBar label="Faltas" home={details.stats.fouls[0]} away={details.stats.fouls[1]} />
-                <StatBar label="Impedimentos" home={details.stats.offsides[0]} away={details.stats.offsides[1]} />
-                <StatBar label="Passes" home={details.stats.passes[0]} away={details.stats.passes[1]} />
-                <StatBar label="Precisão Passes" home={details.stats.passAccuracy[0]} away={details.stats.passAccuracy[1]} unit="%" />
-                <StatBar label="Desarmes" home={details.stats.tackles[0]} away={details.stats.tackles[1]} />
-                <StatBar label="Defesas" home={details.stats.saves[0]} away={details.stats.saves[1]} />
+                
+                {match.sport === "Basquete" && details.basketballStats && (
+                  <BasketballStatsView teamA={match.teamA} teamB={match.teamB} stats={details.basketballStats} />
+                )}
+                
+                {match.sport === "Tênis" && details.tennisStats && (
+                  <TennisStatsView teamA={match.teamA} teamB={match.teamB} stats={details.tennisStats} />
+                )}
+                
+                {match.sport === "Vôlei" && details.volleyballStats && (
+                  <VolleyballStatsView teamA={match.teamA} teamB={match.teamB} stats={details.volleyballStats} />
+                )}
+                
+                {(!match.sport || match.sport === "Futebol") && (
+                  <FootballStatsView teamA={match.teamA} teamB={match.teamB} stats={details.stats} />
+                )}
               </div>
             </RevealSection>
-
-            <div className="space-y-4">
-              <RevealSection delay={80}>
-                <div className="match-card space-y-3">
-                  <h3 className="text-sm font-semibold text-foreground">Gols Esperados (xG)</h3>
-                  <div className="flex items-center justify-around py-4">
-                    <div className="text-center">
-                      <p className="text-2xl font-black text-foreground">{(details.stats.shotsOnTarget[0] * 0.18).toFixed(2)}</p>
-                      <p className="text-xs text-muted-foreground">{match.teamA}</p>
-                    </div>
-                    <div className="text-2xl text-muted-foreground">vs</div>
-                    <div className="text-center">
-                      <p className="text-2xl font-black text-foreground">{(details.stats.shotsOnTarget[1] * 0.18).toFixed(2)}</p>
-                      <p className="text-xs text-muted-foreground">{match.teamB}</p>
-                    </div>
-                  </div>
-                </div>
-              </RevealSection>
-
-              <RevealSection delay={140}>
-                <div className="match-card flex items-start gap-3" style={{ borderColor: "hsl(var(--primary) / 0.25)" }}>
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "hsl(var(--primary) / 0.12)" }}>
-                    <Target className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-semibold text-foreground mb-1">Análise Estatística</h4>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {match.teamA} apresenta {details.stats.possession[0]}% de posse de bola com {details.stats.shots[0]} finalizações ({details.stats.shotsOnTarget[0]} no gol).{" "}
-                      {details.stats.possession[0] > details.stats.possession[1] ? `${match.teamA} domina as ações com mais controle.` : `${match.teamB} mostra eficiência apesar de menos posse.`}
-                    </p>
-                  </div>
-                </div>
-              </RevealSection>
-            </div>
           </div>
         )}
 
@@ -694,8 +895,8 @@ const Analytics = () => {
           </div>
         )}
 
-        {/* ═══════════ TAB: JOGADORES ═══════════ */}
-        {activeTab === "jogadores" && (
+        {/* ═══════════ TAB: JOGADORES / ELENCO ═══════════ */}
+        {activeTab === "jogadores" && match?.sport !== "Tênis" && (
           <div className="space-y-8">
             <RevealSection>
               <div className="flex gap-2">
@@ -727,7 +928,9 @@ const Analytics = () => {
                   {/* All Players */}
                   <RevealSection className="lg:col-span-2" delay={60}>
                     <div className="space-y-3">
-                      <h2 className="text-base font-semibold text-foreground">Elenco</h2>
+                      <h2 className="text-base font-semibold text-foreground">
+                        {match?.sport === "Basquete" ? "Elenco da Temporada" : match?.sport === "Vôlei" ? "Elenco do Time" : "Elenco"}
+                      </h2>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {allPlayers.map((p, i) => <PlayerCard key={i} player={p} />)}
                       </div>
@@ -739,9 +942,9 @@ const Analytics = () => {
                     <RevealSection delay={100}>
                       <div className="match-card space-y-3">
                         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                          <Star className="w-3.5 h-3.5 text-primary" /> Maiores Notas
+                          <Star className="w-3.5 h-3.5 text-primary" /> {match?.sport === "Basquete" ? "Maiores Pontuadores" : "Maiores Notas"}
                         </h3>
-                        {topRated.map((p, i) => (
+                        {(match?.sport === "Basquete" ? topScorers : topRated).map((p, i) => (
                           <div key={i} className="flex items-center gap-3 py-2">
                             <span className="text-xs font-bold text-muted-foreground w-4">{i + 1}.</span>
                             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(var(--primary) / 0.12)", color: "hsl(var(--primary))" }}>
@@ -751,32 +954,38 @@ const Analytics = () => {
                               <p className="text-sm font-medium text-foreground">{p.name}</p>
                               <p className="text-[10px] text-muted-foreground">{p.position}</p>
                             </div>
-                            <span className="text-sm font-bold text-primary">{p.rating}</span>
+                            <span className="text-sm font-bold text-primary">
+                              {match?.sport === "Basquete" ? `${p.goals}pts` : p.rating}
+                            </span>
                           </div>
                         ))}
                       </div>
                     </RevealSection>
 
-                    <RevealSection delay={160}>
-                      <div className="match-card space-y-3">
-                        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                          <Target className="w-3.5 h-3.5 text-primary" /> Artilheiros
-                        </h3>
-                        {topScorers.map((p, i) => (
-                          <div key={i} className="flex items-center gap-3 py-2">
-                            <span className="text-xs font-bold text-muted-foreground w-4">{i + 1}.</span>
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(var(--primary) / 0.12)", color: "hsl(var(--primary))" }}>
-                              {p.number}
+                    {match?.sport !== "Basquete" && (
+                      <RevealSection delay={160}>
+                        <div className="match-card space-y-3">
+                          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                            <Target className="w-3.5 h-3.5 text-primary" /> {match?.sport === "Vôlei" ? "Mais Kills" : "Artilheiros"}
+                          </h3>
+                          {topScorers.map((p, i) => (
+                            <div key={i} className="flex items-center gap-3 py-2">
+                              <span className="text-xs font-bold text-muted-foreground w-4">{i + 1}.</span>
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(var(--primary) / 0.12)", color: "hsl(var(--primary))" }}>
+                                {p.number}
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-foreground">{p.name}</p>
+                                <p className="text-[10px] text-muted-foreground">{p.position} · {p.minutesPlayed}'</p>
+                              </div>
+                              <span className="text-sm font-bold text-foreground">
+                                {match?.sport === "Vôlei" ? `${p.goals}` : `⚽ ${p.goals}`}
+                              </span>
                             </div>
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-foreground">{p.name}</p>
-                              <p className="text-[10px] text-muted-foreground">{p.position} · {p.minutesPlayed}'</p>
-                            </div>
-                            <span className="text-sm font-bold text-foreground">⚽ {p.goals}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </RevealSection>
+                          ))}
+                        </div>
+                      </RevealSection>
+                    )}
                   </div>
                 </div>
               );

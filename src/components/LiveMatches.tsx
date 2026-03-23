@@ -1,4 +1,5 @@
 import { Timer } from "lucide-react";
+import { Link } from "react-router-dom";
 import MatchCard from "./MatchCard";
 import { liveMatches } from "@/data/matches";
 
@@ -16,9 +17,9 @@ const LiveMatches = () => {
             {liveMatches.length} jogos
           </span>
         </div>
-        <button className="text-xs font-medium text-primary hover:underline transition-colors">
+        <Link to="/ao-vivo" className="text-xs font-medium text-primary hover:underline transition-colors">
           Ver todos →
-        </button>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">

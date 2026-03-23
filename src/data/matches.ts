@@ -8,6 +8,7 @@ export interface MatchData {
   scoreA?: number;
   scoreB?: number;
   odds: [number, number, number];
+  sport?: string;
 }
 
 function slugify(teamA: string, teamB: string): string {
@@ -87,6 +88,7 @@ export const liveMatches: MatchData[] = [
     scoreA: 1,
     scoreB: 2,
     odds: [2.45, 3.20, 2.90],
+    sport: "Futebol",
   },
   {
     id: slugify("Chelsea", "Tottenham"),
@@ -98,6 +100,7 @@ export const liveMatches: MatchData[] = [
     scoreA: 0,
     scoreB: 1,
     odds: [3.10, 3.40, 2.15],
+    sport: "Futebol",
   },
   {
     id: slugify("Sevilla", "Valencia"),
@@ -109,6 +112,7 @@ export const liveMatches: MatchData[] = [
     scoreA: 3,
     scoreB: 1,
     odds: [1.25, 5.50, 9.00],
+    sport: "Futebol",
   },
   {
     id: slugify("Corinthians", "São Paulo") + "-live",
@@ -120,6 +124,51 @@ export const liveMatches: MatchData[] = [
     scoreA: 0,
     scoreB: 0,
     odds: [2.30, 3.15, 3.05],
+    sport: "Futebol",
+  },
+  {
+    id: slugify("Los Angeles Lakers", "Golden State Warriors"),
+    league: "NBA",
+    time: "42'",
+    live: true,
+    teamA: "Los Angeles Lakers",
+    teamB: "Golden State Warriors",
+    scoreA: 65,
+    scoreB: 72,
+    odds: [1.95, 3.50, 1.85],
+    sport: "Basquete",
+  },
+  {
+    id: slugify("Boston Celtics", "Miami Heat"),
+    league: "NBA",
+    time: "28'",
+    live: true,
+    teamA: "Boston Celtics",
+    teamB: "Miami Heat",
+    scoreA: 48,
+    scoreB: 51,
+    odds: [1.85, 3.60, 1.95],
+    sport: "Basquete",
+  },
+  {
+    id: slugify("Novak Djokovic", "Carlos Alcaraz"),
+    league: "Australian Open",
+    time: "2º SET - 4-3",
+    live: true,
+    teamA: "Novak Djokovic",
+    teamB: "Carlos Alcaraz",
+    odds: [1.75, 2.10, 2.05],
+    sport: "Tênis",
+  },
+  {
+    id: slugify("Iga Świątek", "Aryna Sabalenka"),
+    league: "Australian Open",
+    time: "1º SET - 5-4",
+    live: true,
+    teamA: "Iga Świątek",
+    teamB: "Aryna Sabalenka",
+    odds: [2.05, 1.85, 1.90],
+    sport: "Tênis",
   },
 ];
 
