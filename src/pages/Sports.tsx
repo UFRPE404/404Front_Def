@@ -42,13 +42,12 @@ const Sports = () => {
 
   // Filter matches by sport and day
   const filteredMatches = useMemo(() => {
-    return allMatches.filter((match) => {
+    return allMatches.filter((match, matchIndex) => {
       const sportMatch = activeSport === "Todos" || match.sport === activeSport;
-      const matchIndex = allMatches.indexOf(match);
       const dayIndex = matchIndex % 7;
       return sportMatch && dayIndex === activeDay;
     });
-  }, [activeSport, activeDay]);
+  }, [allMatches, activeSport, activeDay]);
 
   // Get featured matches for today
   const todayFeaturedMatches = useMemo(() => {
