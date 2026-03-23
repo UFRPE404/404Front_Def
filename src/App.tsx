@@ -7,6 +7,7 @@ import { BetSlipProvider } from "@/contexts/BetSlipContext";
 import Index from "./pages/Index.tsx";
 import Analytics from "./pages/Analytics.tsx";
 import Live from "./pages/Live.tsx";
+import Suggestions from "./pages/Suggestions.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -20,6 +21,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/sugestoes" element={<Suggestions />} />
             <Route path="/ao-vivo" element={<Live />} />
             <Route path="/analises/:matchId" element={<Analytics />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

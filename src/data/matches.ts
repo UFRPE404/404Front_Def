@@ -235,6 +235,123 @@ export const carouselMatches: MatchData[] = [
   },
 ];
 
+export interface SuggestedBet {
+  id: string;
+  matchId: string;
+  teamA: string;
+  teamB: string;
+  league: string;
+  pick: string;
+  odds: number;
+  probability?: number;
+}
+
+export const dreamBets: SuggestedBet[] = [
+  {
+    id: "dream-1",
+    matchId: slugify("PSG", "Marseille"),
+    teamA: "PSG",
+    teamB: "Marseille",
+    league: "Ligue 1",
+    pick: "Vitória do Marseille",
+    odds: 5.50,
+    probability: Math.round((1 / 5.50) * 100),
+  },
+  {
+    id: "dream-2",
+    matchId: slugify("Barcelona", "Atlético Madrid"),
+    teamA: "Barcelona",
+    teamB: "Atlético Madrid",
+    league: "La Liga",
+    pick: "Vitória Atlético Madrid",
+    odds: 4.10,
+    probability: Math.round((1 / 4.10) * 100),
+  },
+  {
+    id: "dream-3",
+    matchId: slugify("Sevilla", "Valencia"),
+    teamA: "Sevilla",
+    teamB: "Valencia",
+    league: "La Liga",
+    pick: "Vitória Valencia",
+    odds: 9.00,
+    probability: Math.round((1 / 9.00) * 100),
+  },
+  {
+    id: "dream-4",
+    matchId: slugify("Ajax", "PSV"),
+    teamA: "Ajax",
+    teamB: "PSV",
+    league: "Eredivisie",
+    pick: "Vitória PSV",
+    odds: 2.70,
+    probability: Math.round((1 / 2.70) * 100),
+  },
+  {
+    id: "dream-5",
+    matchId: slugify("Benfica", "Porto"),
+    teamA: "Benfica",
+    teamB: "Porto",
+    league: "Liga Portugal",
+    pick: "Vitória Porto",
+    odds: 3.45,
+    probability: Math.round((1 / 3.45) * 100),
+  },
+];
+
+export const bestOfDayBets: SuggestedBet[] = [
+  {
+    id: "best-1",
+    matchId: slugify("Real Madrid", "Manchester City"),
+    teamA: "Real Madrid",
+    teamB: "Manchester City",
+    league: "Champions League",
+    pick: "Empate",
+    odds: 3.40,
+    probability: Math.round((1 / 3.40) * 100),
+  },
+  {
+    id: "best-2",
+    matchId: slugify("Arsenal", "Liverpool"),
+    teamA: "Arsenal",
+    teamB: "Liverpool",
+    league: "Premier League",
+    pick: "Vitória Arsenal",
+    odds: 2.60,
+    probability: Math.round((1 / 2.60) * 100),
+  },
+  {
+    id: "best-3",
+    matchId: slugify("Corinthians", "São Paulo"),
+    teamA: "Corinthians",
+    teamB: "São Paulo",
+    league: "Brasileirão Série A",
+    pick: "Empate",
+    odds: 3.15,
+    probability: Math.round((1 / 3.15) * 100),
+  },
+  {
+    id: "best-4",
+    matchId: slugify("Bayern Munich", "Borussia Dortmund"),
+    teamA: "Bayern Munich",
+    teamB: "Borussia Dortmund",
+    league: "Bundesliga",
+    pick: "Vitória Bayern Munich",
+    odds: 1.75,
+    probability: Math.round((1 / 1.75) * 100),
+  },
+  {
+    id: "best-5",
+    matchId: slugify("Inter Milan", "Juventus"),
+    teamA: "Inter Milan",
+    teamB: "Juventus",
+    league: "Serie A",
+    pick: "Empate",
+    odds: 3.30,
+    probability: Math.round((1 / 3.30) * 100),
+  },
+];
+
 export const allMatches: MatchData[] = [
   ...featuredMatches,
   ...liveMatches,
