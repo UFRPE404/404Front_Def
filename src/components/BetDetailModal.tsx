@@ -1,4 +1,4 @@
-import { X, TrendingUp, Percent, Info } from "lucide-react";
+import { X, TrendingUp, Percent, Info, AlertCircle } from "lucide-react";
 import { SuggestedBet } from "@/data/matches";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -17,6 +17,8 @@ const BetDetailModal = ({ bet, isOpen, onClose }: BetDetailModalProps) => {
 
   const isAdded = isSelected(`${bet.matchId}-${bet.pick}`);
   const actualProbability = bet.probability || Math.round((1 / bet.odds) * 100);
+  const riskLevel = bet.odds > 3 ? "Alto" : bet.odds > 2 ? "Médio" : "Baixo";
+  const riskColor = bet.odds > 3 ? "#ff6b6b" : bet.odds > 2 ? "#ffd93d" : "#51cf66";
 
   const handleAddBet = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -28,6 +30,31 @@ const BetDetailModal = ({ bet, isOpen, onClose }: BetDetailModalProps) => {
       pick: bet.pick,
       odds: bet.odds,
     });
+  };
+
+  // Determinar razões para a aposta baseado em odd e tema
+  const getReasons = () => {
+    const reasons = [];
+    
+    if (bet.theme === "dream") {
+      reasons.push("Odd alta com grande potencial de retorno");
+      reasons.push("Evento com baixa probabilidade de ocorrer");
+    } else {
+      reasons.push("Equilíbrio entre probabilidade e retorno");
+      reasons.push("Odd competitiva conforme análise de mercado");
+    }
+    
+    if (bet.odds > 2) {
+      reasons.push("Bom valor para seu risco");
+    }
+    
+    // Adicionar razão específica baseado na liga
+    const leagueKeywords = bet.league.toLowerCase();
+    if (leagueKeywords.includes("champions") || leagueKeywords.includes("premier")) {
+      reasons.push("Liga de alto nível com maior previsibilidade");
+    }
+    
+    return reasons.slice(0, 3);
   };
 
   return (
@@ -88,45 +115,81 @@ const BetDetailModal = ({ bet, isOpen, onClose }: BetDetailModalProps) => {
             </div>
           </div>
 
-          {/* Right Column - Explicação */}
+          {/* Right Column - Estatísticas e Explicação */}
           <div className="space-y-4">
-            {/* Título */}
-            <div className="flex items-start gap-2">
-              <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-foreground text-sm mb-3">Entenda melhor</h3>
+            {/* Estatísticas Visuais */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-sm text-foreground">Análise Visual</h3>
+
+              {/* Barra de Probabilidade */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground font-medium">Probabilidade de Acerto</p>
+                  <p className="text-xs font-bold text-foreground">{actualProbability}%</p>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: "hsl(var(--border))" }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${actualProbability}%`, background: "#51cf66" }}
+                  />
+                </div>
+              </div>
+
+              {/* Retorno Potencial */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground font-medium">Retorno em R$ 100</p>
+                  <p className="text-xs font-bold text-primary">+R$ {((bet.odds - 1) * 100).toFixed(0)}</p>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: "hsl(var(--border))" }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: Math.min((bet.odds / 10) * 100, 100) + "%",
+                      background: "#ffd93d"
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Nível de Risco */}
+              <div className="space-y-1.5 p-2.5 rounded-lg border border-border/50" style={{ background: "hsl(var(--surface-elevated))" }}>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground font-medium">Nível de Risco</span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ color: riskColor, background: `${riskColor}15` }}>
+                    {riskLevel}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Explicação sobre Odds */}
-            <div className="p-3 rounded-lg border border-border/50" style={{ background: "hsl(var(--surface-elevated))" }}>
-              <p className="text-[11px] uppercase font-bold text-primary tracking-wider mb-2">Como funciona a Odd</p>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Se você apostar <span className="font-semibold text-foreground">R$ 100</span>, o retorno total será de <span className="font-semibold text-primary">R$ {(100 * bet.odds).toFixed(0)}</span>, incluindo sua aposta.
-              </p>
+            {/* Por que essa aposta? */}
+            <div className="space-y-2 p-3 rounded-lg border border-border/50" style={{ background: "hsl(var(--surface-elevated))" }}>
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-primary shrink-0" />
+                <p className="text-[10px] uppercase font-bold text-primary tracking-wider">Por que essa aposta?</p>
+              </div>
+              <ul className="space-y-1.5">
+                {getReasons().map((reason, idx) => (
+                  <li key={idx} className="text-xs text-muted-foreground flex items-start gap-2">
+                    <span className="text-primary font-bold mt-0.5">→</span>
+                    <span>{reason}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            {/* Explicação sobre Probabilidade */}
-            <div className="p-3 rounded-lg border border-border/50" style={{ background: "hsl(var(--surface-elevated))" }}>
-              <p className="text-[11px] uppercase font-bold text-primary tracking-wider mb-2">Probabilidade</p>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                <span className="font-semibold text-foreground">{actualProbability}%</span> é a chance estimada desta aposta acertar, conforme a odd oferecida.
-              </p>
-            </div>
-
-            {/* Aviso sobre Risco */}
-            <div className="p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/5">
-              <p className="text-[11px] uppercase font-bold text-yellow-600 dark:text-yellow-400 tracking-wider mb-2">⚠️ Risco</p>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Quanto maior a odd, menor a probabilidade. Apostas com odds altas são <span className="font-semibold">mais arriscadas</span>.
-              </p>
-            </div>
-
-            {/* Dica */}
+            {/* Market Context */}
             <div className="p-3 rounded-lg" style={{ background: "hsl(var(--surface-elevated))" }}>
-              <p className="text-[11px] uppercase font-bold text-primary tracking-wider mb-2">💡 Dica</p>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Combine apostas com diferentes odds para melhorar suas chances. Bilhetes com odds altas precisam de mais eventos certos.
+              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-2">💭 Contexto</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Esta aposta combina uma {riskLevel.toLowerCase()} chance de acerto com um retorno {bet.odds > 2.5 ? "considerável" : "equilibrado"}. {
+                  bet.odds > 3 
+                    ? "Ideal para apostadores que buscam maior potencial de ganho com risco elevado."
+                    : bet.odds > 1.5
+                    ? "Recomendada para montar bilhetes combinados com outras apostas."
+                    : "Segura para consolidar seus ganhos."
+                }
               </p>
             </div>
           </div>
