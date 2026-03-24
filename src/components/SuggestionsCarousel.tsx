@@ -1,12 +1,15 @@
 import { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import MatchCard from "./MatchCard";
-import { useCarouselMatches } from "@/hooks/useMatchesData";
+import SuggestedBetCard from "./SuggestedBetCard";
+import { useAllSuggestedBets } from "@/hooks/useSuggestedBets";
+import { dreamBets } from "@/data/matches";
 
-const GamesCarousel = () => {
-  const { matches: carouselMatches } = useCarouselMatches();
+const SuggestionsCarousel = () => {
+  const { bets } = useAllSuggestedBets();
   const scrollRef = useRef<HTMLDivElement>(null);
   const animRef = useRef<number | null>(null);
+
+  const dreamIds = new Set(dreamBets.map((b) => b.id));
 
   const scroll = (dir: "left" | "right") => {
     if (!scrollRef.current) return;
@@ -29,7 +32,7 @@ const GamesCarousel = () => {
   return (
     <section className="px-4 mt-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-foreground">Jogos</h2>
+        <h2 className="text-lg font-bold text-foreground">Sugestões de Apostas do Dia</h2>
         <div className="flex items-center gap-1">
           <button
             onClick={() => scroll("left")}
@@ -51,9 +54,9 @@ const GamesCarousel = () => {
         className="flex gap-3 overflow-x-auto pb-2"
         style={{ scrollbarWidth: "none" }}
       >
-        {carouselMatches.map((game, i) => (
+        {bets.map((bet, i) => (
           <div
-            key={i}
+            key={bet.id}
             className="flex-shrink-0 w-[280px] animate-in fade-in slide-in-from-bottom-3"
             style={{
               animationDelay: `${i * 70}ms`,
@@ -61,7 +64,10 @@ const GamesCarousel = () => {
               animationDuration: "500ms",
             }}
           >
-            <MatchCard {...game} />
+            <SuggestedBetCard
+              {...bet}
+              theme={dreamIds.has(bet.id) ? "dream" : "best"}
+            />
           </div>
         ))}
       </div>
@@ -69,4 +75,4 @@ const GamesCarousel = () => {
   );
 };
 
-export default GamesCarousel;
+export default SuggestionsCarousel;
