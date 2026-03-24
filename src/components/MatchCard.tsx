@@ -130,6 +130,76 @@ function FormSquares({ form }: { form: FormResult[] }) {
   );
 }
 
+/** Generate a deterministic mock AI insight sentence for the card footer */
+function generateAIInsight(
+  teamA: string, teamB: string,
+  odds: [number, number, number],
+  sport?: string,
+  live?: boolean, scoreA?: number, scoreB?: number,
+): string {
+  const s = (teamSeed(teamA) + teamSeed(teamB)) % 1000;
+  const pick = (arr: string[]) => arr[s % arr.length];
+  const favoriteA = odds[0] <= odds[2];
+  const fav = favoriteA ? teamA : teamB;
+  const dog = favoriteA ? teamB : teamA;
+  const oddsGap = Math.abs(odds[0] - odds[2]);
+  const balanced = oddsGap < 0.5;
+
+  if (live && scoreA !== undefined && scoreB !== undefined) {
+    const winnerTeam = scoreA > scoreB ? teamA : scoreB > scoreA ? teamB : null;
+    const loserTeam  = scoreA > scoreB ? teamB : scoreB > scoreA ? teamA : null;
+    if (winnerTeam && loserTeam) {
+      return pick([
+        `${winnerTeam} controla o jogo e a vantagem no placar dificulta a reação adversária. Padrão indica manutenção do resultado.`,
+        `A pressão de ${loserTeam} cresce, mas ${winnerTeam} explora bem os espaços em contra-ataque. Odd de handicap pode ser atrativa.`,
+        `${winnerTeam} impõe seu estilo e o sistema defensivo tem sido eficiente. Probabilidade de reversão se mantém baixa.`,
+        `Domínio de ${winnerTeam} refletido no placar. Mercado de "ambas marcam" ganha relevância se ${loserTeam} abrir o jogo.`,
+      ]);
+    }
+    return pick([
+      `Equilíbrio total até agora. ${fav} tem o favoritismo das odds mas ainda não converteu chances claras em gol.`,
+      `Empate justo dado o confronto direto até o momento. A qualidade de ${fav} pode ser decisiva nos minutos finais.`,
+      `Nenhuma equipe domina com clareza. Mercado de "próximo gol" apresenta valor com ${fav} ligeiramente superior.`,
+    ]);
+  }
+
+  // Pre-match
+  if (sport === "Tênis") {
+    return pick([
+      `${fav} chega com melhor aproveitamento em sets disputados. Confrontos anteriores favorecem o favorito nas odds.`,
+      `Saque potente de ${fav} é vantagem crucial em quadras rápidas. Percentual de 1° serviço será o fator-chave.`,
+      `${dog} tem histórico de surpreender em torneios deste nível. A jornada física recente pode ser determinante.`,
+    ]);
+  }
+  if (sport === "Basquete") {
+    return pick([
+      `${fav} apresenta média ofensiva superior. O ritmo de jogo ditado por eles tende a abrir vantagens nos quartos finais.`,
+      `Confronto de estilos: ${fav} prefere jogo de transição enquanto ${dog} aposta na meia-quadra. Spread de pontos é atrativo.`,
+      `${fav} tem o melhor ataque do confronto em média recente. Over de pontos totais tem apelo histórico nessa matchup.`,
+    ]);
+  }
+  if (sport === "Vôlei") {
+    return pick([
+      `${fav} lidera em eficiência de ataque nas últimas rodadas. Presença no bloqueio será determinante para o placar por sets.`,
+      `Confronto técnico com ${fav} em vantagem de saque. Handicap de sets apresenta valor dado o histórico recente.`,
+    ]);
+  }
+  // Futebol
+  if (balanced) {
+    return pick([
+      `Odds equilibradas refletem incerteza real. O fator mando de campo e a forma recente serão determinantes.`,
+      `Confronto parelho onde pequenos detalhes decidem. Mercado de escanteios pode oferecer oportunidade de valor.`,
+      `Histórico de h2h entre ${teamA} e ${teamB} tende a ser disputado. Gols nos acréscimos são frequentes nesse duelo.`,
+    ]);
+  }
+  return pick([
+    `${fav} chega como favorito claro e a forma recente reforça essa expectativa. Odd de -1 pode ser explorada.`,
+    `As estatísticas de ${fav} nas últimas rodadas justificam o favoritismo. ${dog} raramente supera defensas organizadas.`,
+    `${fav} tem vantagem em todas as métricas ofensivas relevantes. Linha de gols acima de 1.5 tem apelo histórico.`,
+    `Pressão ofensiva de ${fav} deve ser evidente desde o início. Primeiro tempo apresenta valor de aposta nessa análise.`,
+  ]);
+}
+
 /** Compact stat row used in both live and pre-match hover */
 function StatRow({ label, valueA, valueB, color }: { label: string; valueA: string | number; valueB: string | number; color: string }) {
   return (
@@ -162,6 +232,11 @@ const MatchCard = ({
   // Pre-match: last 5 form
   const formA = useMemo(() => generateTeamForm(teamA), [teamA]);
   const formB = useMemo(() => generateTeamForm(teamB), [teamB]);
+  // AI insight sentence
+  const aiInsight = useMemo(
+    () => generateAIInsight(teamA, teamB, odds, sport, live, scoreA, scoreB),
+    [teamA, teamB, odds, sport, live, scoreA, scoreB]
+  );
 
   const handleCardClick = () => {
     navigate(`/analises/${encodeURIComponent(id)}`);
@@ -330,6 +405,33 @@ const MatchCard = ({
 
           </div>
         </div>
+
+        {/* =========================================
+            ANÁLISE DA IA — sempre visível no rodé
+            ========================================= */}
+        <div className="mt-3 pt-3 border-t border-border/40">
+          <div className="flex gap-2.5">
+            {/* Borda gradiente lateral */}
+            <div className="w-[2px] self-stretch rounded-full shrink-0 bg-gradient-to-b from-primary/70 via-primary/30 to-transparent" />
+            <div className="flex flex-col gap-1 min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="shrink-0">
+                  <path d="M5 0l1.12 3.38L9.51 5 6.12 6.62 5 10 3.88 6.62.49 5l3.39-1.62Z" fill="hsl(var(--primary))" opacity="0.85"/>
+                </svg>
+                <span className="text-[9px] font-black uppercase tracking-[0.15em] text-primary/75">
+                  Análise IA
+                </span>
+                <span className="ml-auto text-[9px] text-muted-foreground/30 normal-case tracking-normal font-normal">
+                  preview
+                </span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-muted-foreground/75 italic line-clamp-2 group-hover:line-clamp-none transition-all duration-300">
+                {aiInsight}
+              </p>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
