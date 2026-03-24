@@ -115,11 +115,11 @@ function generateTeamForm(teamName: string): FormResult[] {
 /** 5 colored squares showing V/E/D form */
 function FormSquares({ form }: { form: FormResult[] }) {
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-1 flex-1">
       {form.map((r, i) => (
         <div
           key={i}
-          className={`w-6 h-6 rounded-sm flex items-center justify-center text-[10px] font-black text-white ${
+          className={`flex-1 aspect-square rounded-sm flex items-center justify-center text-[10px] font-black text-white min-w-0 ${
             r === "V" ? "bg-green-500" : r === "E" ? "bg-muted-foreground/50" : "bg-destructive/80"
           }`}
         >
@@ -302,7 +302,7 @@ const MatchCard = ({
                   <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest block text-center mb-2">
                     Últimas 5 partidas
                   </span>
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 w-full">
                     <FormSquares form={formA} />
                     <span className="text-[9px] uppercase font-bold text-muted-foreground/50 tracking-widest shrink-0">FORM</span>
                     {/* Reverse team B form so most recent is on the inside */}
