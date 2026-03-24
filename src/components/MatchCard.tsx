@@ -99,6 +99,37 @@ function generateLiveStats(teamA: string, teamB: string, odds: [number, number, 
   ];
 }
 
+type FormResult = "V" | "E" | "D";
+
+/** Deterministic last-5 form for a team */
+function generateTeamForm(teamName: string): FormResult[] {
+  const s = teamSeed(teamName);
+  return Array.from({ length: 5 }, (_, i) => {
+    const v = (s * (i + 7) * 31 + i * 17) % 10;
+    if (v < 5) return "V";
+    if (v < 7) return "E";
+    return "D";
+  });
+}
+
+/** 5 colored squares showing V/E/D form */
+function FormSquares({ form }: { form: FormResult[] }) {
+  return (
+    <div className="flex gap-1">
+      {form.map((r, i) => (
+        <div
+          key={i}
+          className={`w-6 h-6 rounded-sm flex items-center justify-center text-[10px] font-black text-white ${
+            r === "V" ? "bg-green-500" : r === "E" ? "bg-muted-foreground/50" : "bg-destructive/80"
+          }`}
+        >
+          {r}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Compact stat row used in both live and pre-match hover */
 function StatRow({ label, valueA, valueB, color }: { label: string; valueA: string | number; valueB: string | number; color: string }) {
   return (
@@ -128,6 +159,9 @@ const MatchCard = ({
   const statsB = useMemo(() => generateTeamAvgStats(teamB, sport), [teamB, sport]);
   // Live: deterministic in-match stats
   const liveStats = useMemo(() => generateLiveStats(teamA, teamB, odds, sport), [teamA, teamB, odds, sport]);
+  // Pre-match: last 5 form
+  const formA = useMemo(() => generateTeamForm(teamA), [teamA]);
+  const formB = useMemo(() => generateTeamForm(teamB), [teamB]);
 
   const handleCardClick = () => {
     navigate(`/analises/${encodeURIComponent(id)}`);
@@ -261,20 +295,36 @@ const MatchCard = ({
                 ))}
               </div>
             ) : (
-              /* ====== PRÉ-JOGO: Média últimas 10 partidas A vs B ====== */
-              <div className="flex flex-col gap-1.5 bg-secondary/20 rounded-lg p-2.5 border border-border/30">
-                <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest text-center mb-0.5">
-                  Média últimas 10 partidas
-                </span>
-                {statsA.map((stat, i) => (
-                  <StatRow
-                    key={stat.label}
-                    label={stat.label}
-                    valueA={stat.value}
-                    valueB={statsB[i].value}
-                    color={INSIGHT_COLORS[i]}
-                  />
-                ))}
+              /* ====== PRÉ-JOGO: Forma + Média últimas partidas ====== */
+              <div className="flex flex-col gap-2">
+                {/* Form últimas 5 */}
+                <div className="bg-secondary/20 rounded-lg p-2.5 border border-border/30">
+                  <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest block text-center mb-2">
+                    Últimas 5 partidas
+                  </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <FormSquares form={formA} />
+                    <span className="text-[9px] uppercase font-bold text-muted-foreground/50 tracking-widest shrink-0">FORM</span>
+                    {/* Reverse team B form so most recent is on the inside */}
+                    <FormSquares form={[...formB].reverse()} />
+                  </div>
+                </div>
+
+                {/* Médias */}
+                <div className="flex flex-col gap-1.5 bg-secondary/20 rounded-lg p-2.5 border border-border/30">
+                  <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest text-center mb-0.5">
+                    Média últimas 10 partidas
+                  </span>
+                  {statsA.map((stat, i) => (
+                    <StatRow
+                      key={stat.label}
+                      label={stat.label}
+                      valueA={stat.value}
+                      valueB={statsB[i].value}
+                      color={INSIGHT_COLORS[i]}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 
