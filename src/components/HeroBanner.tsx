@@ -133,7 +133,7 @@ const HeroBanner = () => {
                   <Trophy className="w-4 h-4 text-primary shrink-0" />
                   <p className="text-[10px] uppercase font-bold text-primary tracking-wider">Múltiplos Esportes</p>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">Futebol, Basquete, Tînis e Vôlei com estatísticas adaptadas, cronogramas semanais e partidas em destaque por modalidade.</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">Futebol, Basquete, Tênis e Vôlei com estatísticas adaptadas, cronogramas semanais e partidas em destaque por modalidade.</p>
               </div>
 
               <div className="p-3 rounded-xl border border-border/50" style={{ background: "hsl(var(--surface-elevated))" }}>
@@ -141,7 +141,7 @@ const HeroBanner = () => {
                   <Ticket className="w-4 h-4 text-primary shrink-0" />
                   <p className="text-[10px] uppercase font-bold text-primary tracking-wider">Bilhete de Apostas</p>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">Adicione seleções pelo site, acompanhe odds combinadas e gerencie suas apostas sem sair da plataforma.</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">Adicione seleções ao seu bilhete, acompanhe as odds combinadas e gerencie suas apostas sem sair da plataforma.</p>
               </div>
 
               <div className="p-3 rounded-xl border border-border/50" style={{ background: "hsl(var(--surface-elevated))" }}>
@@ -149,7 +149,7 @@ const HeroBanner = () => {
                   <BookOpen className="w-4 h-4 text-primary shrink-0" />
                   <p className="text-[10px] uppercase font-bold text-primary tracking-wider">Interpretação Inteligente</p>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">Probabilidades e métricas traduzidas em linguagem clara para decisões fundamentadas — baseadas em dados reais, não em achismos.</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">Probabilidades e métricas traduzidas em linguagem clara para que você tome decisões fundamentadas — tudo baseado em dados reais, não em palpites.</p>
               </div>
             </div>
           </div>
