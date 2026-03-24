@@ -102,15 +102,22 @@ export function useMatchesBySport(sport: string | null): UseMatchesResult {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    // Always clear stale data immediately when sport changes so the
+    // previous sport's matches never bleed into the next render.
+    setMatches([]);
+
     if (!sport) return;
-    
+
+    let cancelled = false;
     setLoading(true);
     setError(null);
     matchesService
       .getMatchesBySport(sport)
-      .then(setMatches)
-      .catch(setError)
-      .finally(() => setLoading(false));
+      .then((data) => { if (!cancelled) setMatches(data); })
+      .catch((err) => { if (!cancelled) setError(err); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
   }, [sport]);
 
   return { matches, loading, error };

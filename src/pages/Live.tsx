@@ -7,7 +7,9 @@ import LiveSportFilter from "@/components/LiveSportFilter";
 import { useLiveMatches } from "@/hooks/useMatchesData";
 
 const Live = () => {
-  const [activeSport, setActiveSport] = useState("Futebol");
+  const searchParams = new URLSearchParams(window.location.search);
+  const sportParam = searchParams.get("sport");
+  const [activeSport, setActiveSport] = useState(sportParam || "Todos");
   const { matches: liveMatches } = useLiveMatches();
 
   // Calculate sport counts

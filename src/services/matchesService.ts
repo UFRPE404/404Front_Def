@@ -1,4 +1,5 @@
-import { MatchData } from "@/data/matches";
+import type { MatchData, MatchStatistics, MatchEvent, MatchLineup, H2HRecord } from "@/data/matches";
+import { apiRequest } from "@/config/api";
 import {
   allMatches,
   carouselMatches,
@@ -8,17 +9,14 @@ import {
 } from "@/data/matches";
 
 /**
- * Service layer for matches data
- * Future: Replace with actual API calls to backend
- * 
- * Example API integration:
- * const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
- * 
- * export async function getAllMatches(): Promise<MatchData[]> {
- *   const response = await fetch(`${API_BASE_URL}/matches`);
- *   if (!response.ok) throw new Error('Failed to fetch matches');
- *   return response.json();
- * }
+ * Service layer for matches data.
+ *
+ * To switch from mocks to a real backend:
+ *   1. Set VITE_API_URL in your .env (e.g. https://api.myapp.com)
+ *   2. Replace the `Promise.resolve(...)` bodies below with `apiRequest<T>(...)`.
+ *      Example stubs are commented out next to each function.
+ *   3. The hooks that consume these services already handle loading / error states,
+ *      so the UI will "just work" once the API is live.
  */
 
 export async function getAllMatches(): Promise<MatchData[]> {
@@ -83,11 +81,39 @@ export async function getUniqueSports(): Promise<string[]> {
 
 export async function getUniqueLeaguesBySport(sport: string): Promise<string[]> {
   // TODO: Replace with actual API call
-  // return fetch(`${API_BASE_URL}/leagues?sport=${sport}`).then(r => r.json());
+  // return apiRequest<string[]>(`/leagues?sport=${sport}`);
   const matches = await getMatchesBySport(sport);
   const leagues = new Set<string>();
   matches.forEach((match) => {
     leagues.add(match.league);
   });
   return Array.from(leagues).sort();
+}
+
+// ─── Extended endpoints (return empty data until backend is wired) ──
+
+export async function getMatchById(id: string): Promise<MatchData | undefined> {
+  // return apiRequest<MatchData>(`/matches/${id}`);
+  const matches = await getAllMatches();
+  return matches.find((m) => m.id === id);
+}
+
+export async function getMatchStatistics(matchId: string): Promise<MatchStatistics | null> {
+  // return apiRequest<MatchStatistics>(`/matches/${matchId}/statistics`);
+  return Promise.resolve(null);
+}
+
+export async function getMatchEvents(matchId: string): Promise<MatchEvent[]> {
+  // return apiRequest<MatchEvent[]>(`/matches/${matchId}/events`);
+  return Promise.resolve([]);
+}
+
+export async function getMatchLineups(matchId: string): Promise<MatchLineup | null> {
+  // return apiRequest<MatchLineup>(`/matches/${matchId}/lineups`);
+  return Promise.resolve(null);
+}
+
+export async function getMatchH2H(matchId: string): Promise<H2HRecord[]> {
+  // return apiRequest<H2HRecord[]>(`/matches/${matchId}/h2h`);
+  return Promise.resolve([]);
 }

@@ -3,22 +3,36 @@ import {
   Volleyball,
   Dumbbell,
   Target,
-  Gamepad2,
   Timer,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo } from "react";
+import { allMatches, liveMatches } from "@/data/matches";
 
-const sports = [
-  { name: "Futebol", icon: Trophy, count: 142 },
-  { name: "Basquete", icon: Dumbbell, count: 87 },
-  { name: "Tênis", icon: Target, count: 63 },
-  { name: "Vôlei", icon: Volleyball, count: 34 },
-  { name: "E-Sports", icon: Gamepad2, count: 28 },
-  { name: "Ao Vivo", icon: Timer, count: 56 },
+const SPORT_CONFIG = [
+  { name: "Futebol", icon: Trophy },
+  { name: "Basquete", icon: Dumbbell },
+  { name: "Tênis", icon: Target },
+  { name: "Vôlei", icon: Volleyball },
+  { name: "Ao Vivo", icon: Timer },
 ];
 
-const SportsSidebar = () => {
-  const [active, setActive] = useState("Futebol");
+interface SportsSidebarProps {
+  activeSport: string;
+  onSportChange: (sport: string) => void;
+}
+
+const SportsSidebar = ({ activeSport, onSportChange }: SportsSidebarProps) => {
+  const counts = useMemo(() => {
+    const map: Record<string, number> = {};
+    SPORT_CONFIG.forEach(({ name }) => {
+      if (name === "Ao Vivo") {
+        map[name] = liveMatches.length;
+      } else {
+        map[name] = allMatches.filter((m) => m.sport === name).length;
+      }
+    });
+    return map;
+  }, []);
 
   return (
     <aside className="w-full lg:w-56 shrink-0 lg:self-start lg:sticky lg:top-20">
@@ -26,17 +40,17 @@ const SportsSidebar = () => {
         Esportes
       </h2>
       <nav className="space-y-0.5">
-        {sports.map((sport) => {
+        {SPORT_CONFIG.map((sport) => {
           const Icon = sport.icon;
           return (
             <button
               key={sport.name}
-              onClick={() => setActive(sport.name)}
-              className={`sport-item w-full ${active === sport.name ? "active" : ""}`}
+              onClick={() => onSportChange(sport.name)}
+              className={`sport-item w-full ${activeSport === sport.name ? "active" : ""}`}
             >
               <Icon className="w-4 h-4" />
               <span className="flex-1 text-left">{sport.name}</span>
-              <span className="text-xs opacity-60">{sport.count}</span>
+              <span className="text-xs opacity-60">{counts[sport.name]}</span>
             </button>
           );
         })}

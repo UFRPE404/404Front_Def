@@ -1,3 +1,54 @@
+export interface MatchStatistics {
+  possession?: [number, number];
+  shots?: [number, number];
+  shotsOnTarget?: [number, number];
+  corners?: [number, number];
+  fouls?: [number, number];
+  yellowCards?: [number, number];
+  redCards?: [number, number];
+  // Basketball
+  rebounds?: [number, number];
+  assists?: [number, number];
+  turnovers?: [number, number];
+  threePointers?: [number, number];
+  freeThrows?: [number, number];
+  // Tennis / Volleyball
+  aces?: [number, number];
+  doubleFaults?: [number, number];
+  firstServePercent?: [number, number];
+}
+
+export interface MatchEvent {
+  id: string;
+  minute: number;
+  type: 'goal' | 'card' | 'substitution' | 'var' | 'penalty' | 'corner' | 'set' | 'timeout';
+  team: 'A' | 'B';
+  player?: string;
+  detail?: string;
+}
+
+export interface PlayerInfo {
+  id: string;
+  name: string;
+  number?: number;
+  position?: string;
+  photo?: string;
+}
+
+export interface MatchLineup {
+  teamA: { formation?: string; starters: PlayerInfo[]; bench: PlayerInfo[] };
+  teamB: { formation?: string; starters: PlayerInfo[]; bench: PlayerInfo[] };
+}
+
+export interface H2HRecord {
+  date: string;
+  competition: string;
+  scoreA: number;
+  scoreB: number;
+  teamA: string;
+  teamB: string;
+}
+
 export interface MatchData {
   id: string;
   league: string;
@@ -9,6 +60,17 @@ export interface MatchData {
   scoreB?: number;
   odds: [number, number, number];
   sport?: string;
+  // Extended fields — populated when backend is integrated
+  statistics?: MatchStatistics;
+  events?: MatchEvent[];
+  lineups?: MatchLineup;
+  h2h?: H2HRecord[];
+  venue?: string;
+  referee?: string;
+  logoA?: string;
+  logoB?: string;
+  period?: string;        // "1st Half", "Q3", "2º Set", etc.
+  minuteOfPlay?: number;  // actual elapsed game minutes (for live)
 }
 
 function slugify(teamA: string, teamB: string): string {
@@ -261,7 +323,7 @@ export const carouselMatches: MatchData[] = [
     sport: "Basquete",
   },
   {
-    id: slugify("Novak Djokovic", "Carlos Alcaraz"),
+    id: slugify("Novak Djokovic", "Carlos Alcaraz") + "-pre",
     league: "Australian Open",
     time: "12:00",
     teamA: "Novak Djokovic",
@@ -270,7 +332,7 @@ export const carouselMatches: MatchData[] = [
     sport: "Tênis",
   },
   {
-    id: slugify("Iga Swiatek", "Aryna Sabalenka"),
+    id: slugify("Iga Swiatek", "Aryna Sabalenka") + "-pre",
     league: "Australian Open",
     time: "14:30",
     teamA: "Iga Swiatek",

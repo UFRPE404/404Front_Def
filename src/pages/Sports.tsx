@@ -7,7 +7,9 @@ import { useMatches, useCarouselMatches, useSports } from "@/hooks/useMatchesDat
 import { Trophy, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 
 const Sports = () => {
-  const [activeSport, setActiveSport] = useState("Futebol");
+  const searchParams = new URLSearchParams(window.location.search);
+  const sportParam = searchParams.get("sport");
+  const [activeSport, setActiveSport] = useState(sportParam || "Todos");
   const [activeDay, setActiveDay] = useState(0); // 0 = hoje, 1 = amanhã, etc
   const featuredScrollRef = useRef<HTMLDivElement>(null);
   const leagueScrollRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
@@ -42,11 +44,11 @@ const Sports = () => {
 
   // Filter matches by sport and day
   const filteredMatches = useMemo(() => {
-    return allMatches.filter((match, matchIndex) => {
-      const sportMatch = activeSport === "Todos" || match.sport === activeSport;
-      const dayIndex = matchIndex % 7;
-      return sportMatch && dayIndex === activeDay;
-    });
+    const sportFiltered = allMatches.filter((match) => 
+      activeSport === "Todos" || match.sport === activeSport
+    );
+    // Use index within sport-filtered array, not the original allMatches index
+    return sportFiltered.filter((_, idx) => (idx % 7) === activeDay);
   }, [allMatches, activeSport, activeDay]);
 
   // Get featured matches for today

@@ -1,12 +1,7 @@
-import { TrendingUp, AlertTriangle, Target, Shield } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { useBetSlip } from "@/contexts/BetSlipContext";
 import { useNavigate } from "react-router-dom";
-
-interface InsightData {
-  goalChance: number;
-  cardChance: number;
-  penaltyChance: number;
-}
+import { generateMatchAnalysis } from "@/utils/matchAnalysis";
 
 interface MatchProps {
   id: string;
@@ -18,7 +13,7 @@ interface MatchProps {
   scoreA?: number;
   scoreB?: number;
   odds: [number, number, number];
-  insights?: InsightData;
+  sport?: string;
 }
 
 const InsightBar = ({ value, color }: { value: number; color: string }) => (
@@ -27,10 +22,35 @@ const InsightBar = ({ value, color }: { value: number; color: string }) => (
   </div>
 );
 
-const MatchCard = ({ id, league, time, live, teamA, teamB, scoreA, scoreB, odds, insights }: MatchProps) => {
+interface InsightItemProps {
+  label: string;
+  prediction: string;
+  percentage: number;
+  color: string;
+}
+
+const InsightItem = ({ label, prediction, percentage, color }: InsightItemProps) => (
+  <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-0.5 w-16 shrink-0">
+      <span className="text-[9px] text-muted-foreground font-medium">{label}</span>
+    </div>
+    <InsightBar value={percentage} color={color} />
+    <div className="flex flex-col items-end gap-0">
+      <span className="text-[9px] font-semibold text-foreground leading-none\">{prediction}</span>
+      <span className="text-[8px] text-muted-foreground leading-none\">{percentage}%</span>
+    </div>
+  </div>
+);
+
+const INSIGHT_COLORS = ["--insight-positive", "--insight-warning", "--insight-info"];
+
+const MatchCard = ({ id, league, time, live, teamA, teamB, scoreA, scoreB, odds, sport }: MatchProps) => {
   const { addSelection, isSelected } = useBetSlip();
   const navigate = useNavigate();
   const matchId = `${teamA}-${teamB}`;
+
+  // Sport-specific analysis
+  const matchAnalysis = generateMatchAnalysis(time, scoreA, scoreB, odds, sport, live);
 
   const handleOddsClick = (pick: string, oddValue: number) => {
     addSelection({
@@ -43,19 +63,6 @@ const MatchCard = ({ id, league, time, live, teamA, teamB, scoreA, scoreB, odds,
     });
   };
 
-  // Generate deterministic insights if not provided
-  const matchInsights = insights || {
-    goalChance: Math.round(((odds[0] * 17 + odds[1] * 13) % 60) + 30),
-    cardChance: Math.round(((odds[1] * 23 + odds[2] * 11) % 50) + 20),
-    penaltyChance: Math.round(((odds[2] * 19 + odds[0] * 7) % 25) + 5),
-  };
-
-  // Determine predicted winner
-  const minOdd = Math.min(...odds);
-  const favIndex = odds.indexOf(minOdd);
-  const favLabel = favIndex === 0 ? teamA : favIndex === 2 ? teamB : "Empate";
-  const winProb = Math.round((1 / minOdd) * 100);
-
   const handleCardClick = () => {
     navigate(`/analises/${encodeURIComponent(id)}`);
   };
@@ -63,68 +70,92 @@ const MatchCard = ({ id, league, time, live, teamA, teamB, scoreA, scoreB, odds,
   return (
     <div className="match-card cursor-pointer hover:ring-1 hover:ring-primary/40 transition-all duration-200" onClick={handleCardClick}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs text-muted-foreground font-medium">{league}</span>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[11px] text-muted-foreground font-medium">{league}</span>
         <div className="flex items-center gap-1.5">
           {live && (
-            <span className="flex items-center gap-1 text-xs font-semibold text-primary">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="flex items-center gap-1 text-[10px] font-semibold text-primary">
+              <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
               AO VIVO
             </span>
           )}
-          <span className="text-xs text-muted-foreground">{time}</span>
+          <span className="text-[11px] text-muted-foreground">{time}</span>
         </div>
       </div>
 
       {/* Teams */}
-      <div className="space-y-2 mb-3">
+      <div className="space-y-1.5 mb-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-foreground">{teamA}</span>
-          {scoreA !== undefined && <span className="text-sm font-bold text-foreground">{scoreA}</span>}
+          <span className="text-[12px] font-semibold text-foreground">{teamA}</span>
+          {scoreA !== undefined && <span className="text-[12px] font-bold text-foreground">{scoreA}</span>}
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-foreground">{teamB}</span>
-          {scoreB !== undefined && <span className="text-sm font-bold text-foreground">{scoreB}</span>}
+          <span className="text-[12px] font-semibold text-foreground">{teamB}</span>
+          {scoreB !== undefined && <span className="text-[12px] font-bold text-foreground">{scoreB}</span>}
         </div>
       </div>
 
       {/* Analysis Insights */}
-      <div className="mb-3 p-2.5 rounded-lg space-y-2" style={{ background: "hsl(var(--surface-elevated))" }}>
-        <div className="flex items-center gap-1.5 mb-1.5">
-          <TrendingUp className="w-3 h-3 text-primary" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">Análise</span>
+      <div className="p-1.5 rounded-md space-y-1.5" style={{ background: "hsl(var(--surface-elevated))" }}>
+        <div className="flex items-center gap-1 mb-1">
+          <TrendingUp className="w-2.5 h-2.5 text-primary" />
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-primary">Análise</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 w-16 shrink-0">
-            <Target className="w-3 h-3 text-muted-foreground" />
-            <span className="text-[10px] text-muted-foreground">Gol</span>
-          </div>
-          <InsightBar value={matchInsights.goalChance} color="--insight-positive" />
-          <span className="text-[10px] font-bold text-foreground w-8 text-right">{matchInsights.goalChance}%</span>
-        </div>
+        {matchAnalysis.lines.map((line, i) => (
+          <InsightItem
+            key={line.label}
+            label={line.label}
+            prediction={line.prediction}
+            percentage={line.percentage}
+            color={INSIGHT_COLORS[i]}
+          />
+        ))}
+      </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 w-16 shrink-0">
-            <AlertTriangle className="w-3 h-3 text-muted-foreground" />
-            <span className="text-[10px] text-muted-foreground">Cartão</span>
-          </div>
-          <InsightBar value={matchInsights.cardChance} color="--insight-warning" />
-          <span className="text-[10px] font-bold text-foreground w-8 text-right">{matchInsights.cardChance}%</span>
+      {/* Win Probability */}
+      <div className="mt-1.5 p-1.5 rounded-md" style={{ background: "hsl(var(--surface-elevated))" }}>
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[9px] font-bold text-foreground truncate max-w-[35%]">{teamA}</span>
+          <span className="text-[8px] text-muted-foreground font-medium">Prob. vitória</span>
+          <span className="text-[9px] font-bold text-foreground truncate max-w-[35%] text-right">{teamB}</span>
         </div>
-
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 w-16 shrink-0">
-            <Shield className="w-3 h-3 text-muted-foreground" />
-            <span className="text-[10px] text-muted-foreground">Pênalti</span>
-          </div>
-          <InsightBar value={matchInsights.penaltyChance} color="--insight-danger" />
-          <span className="text-[10px] font-bold text-foreground w-8 text-right">{matchInsights.penaltyChance}%</span>
+        {/* Split probability bar */}
+        <div className="flex h-2 rounded-full overflow-hidden gap-px">
+          <div
+            className="rounded-l-full transition-all duration-500"
+            style={{
+              width: `${matchAnalysis.winProb.teamA}%`,
+              background: "hsl(var(--insight-positive))",
+            }}
+          />
+          {matchAnalysis.winProb.draw > 3 && (
+            <div
+              className="transition-all duration-500"
+              style={{
+                width: `${matchAnalysis.winProb.draw}%`,
+                background: "hsl(var(--muted-foreground) / 0.4)",
+              }}
+            />
+          )}
+          <div
+            className="rounded-r-full transition-all duration-500"
+            style={{
+              width: `${matchAnalysis.winProb.teamB}%`,
+              background: "hsl(var(--insight-warning))",
+            }}
+          />
         </div>
-
-        <div className="flex items-center justify-between pt-1 border-t" style={{ borderColor: "hsl(var(--border))" }}>
-          <span className="text-[10px] text-muted-foreground">Favorito</span>
-          <span className="text-[10px] font-bold text-primary">{favLabel} ({winProb}%)</span>
+        <div className="flex items-center justify-between mt-0.5">
+          <span className="text-[9px] font-bold" style={{ color: "hsl(var(--insight-positive))" }}>
+            {matchAnalysis.winProb.teamA}%
+          </span>
+          {matchAnalysis.winProb.draw > 3 && (
+            <span className="text-[8px] text-muted-foreground">{matchAnalysis.winProb.draw}% X</span>
+          )}
+          <span className="text-[9px] font-bold" style={{ color: "hsl(var(--insight-warning))" }}>
+            {matchAnalysis.winProb.teamB}%
+          </span>
         </div>
       </div>
     </div>

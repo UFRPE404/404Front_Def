@@ -22,7 +22,7 @@ const Navbar = () => {
 
         {/* Center nav links - desktop */}
         <div className="hidden md:flex items-center gap-1">
-          {([{ label: "Ao Vivo", to: "/ao-vivo" }, { label: "Sugestões", to: "/sugestoes" }, { label: "Esportes", to: "/esportes" }] as const).map((item) => (
+          {([{ label: "Ao Vivo", to: "/ao-vivo?sport=Todos" }, { label: "Sugestões", to: "/sugestoes" }, { label: "Esportes", to: "/esportes?sport=Todos" }] as const).map((item) => (
             <Link
               key={item.label}
               to={item.to}
@@ -50,7 +50,7 @@ const Navbar = () => {
       {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden border-t border-border px-4 py-3 space-y-1">
-          {([{ label: "Ao Vivo", to: "/ao-vivo" }, { label: "Sugestões", to: "/sugestoes" }, { label: "Esportes", to: "/esportes" }] as const).map((item) => (
+          {([{ label: "Ao Vivo", to: "/ao-vivo?sport=Todos" }, { label: "Sugestões", to: "/sugestoes" }, { label: "Esportes", to: "/esportes?sport=Todos" }] as const).map((item) => (
             <Link
               key={item.label}
               to={item.to}
