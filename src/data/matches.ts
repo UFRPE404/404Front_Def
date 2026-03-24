@@ -82,19 +82,8 @@ function slugify(teamA: string, teamB: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
+// Pre-match only — live matches live exclusively in liveMatches.
 export const featuredMatches: MatchData[] = [
-  {
-    id: slugify("Flamengo", "Palmeiras"),
-    league: "Brasileirão Série A",
-    time: "21:30",
-    live: true,
-    teamA: "Flamengo",
-    teamB: "Palmeiras",
-    scoreA: 1,
-    scoreB: 2,
-    odds: [2.45, 3.20, 2.90],
-    sport: "Futebol",
-  },
   {
     id: slugify("Real Madrid", "Manchester City"),
     league: "Champions League",
@@ -123,18 +112,6 @@ export const featuredMatches: MatchData[] = [
     sport: "Futebol",
   },
   {
-    id: slugify("Corinthians", "São Paulo"),
-    league: "Brasileirão Série A",
-    time: "19:00",
-    live: true,
-    teamA: "Corinthians",
-    teamB: "São Paulo",
-    scoreA: 0,
-    scoreB: 0,
-    odds: [2.30, 3.15, 3.05],
-    sport: "Futebol",
-  },
-  {
     id: slugify("Inter Milan", "Juventus"),
     league: "Serie A",
     time: "15:45",
@@ -145,9 +122,10 @@ export const featuredMatches: MatchData[] = [
   },
 ];
 
+// Live-only — once a match goes live it moves here and is removed from featuredMatches.
 export const liveMatches: MatchData[] = [
   {
-    id: slugify("Flamengo", "Palmeiras") + "-live",
+    id: slugify("Flamengo", "Palmeiras"),
     league: "Brasileirão Série A",
     time: "67'",
     live: true,
@@ -183,7 +161,7 @@ export const liveMatches: MatchData[] = [
     sport: "Futebol",
   },
   {
-    id: slugify("Corinthians", "São Paulo") + "-live",
+    id: slugify("Corinthians", "São Paulo"),
     league: "Brasileirão Série A",
     time: "12'",
     live: true,
@@ -498,13 +476,14 @@ export const bestOfDayBets: SuggestedBet[] = [
   },
 ];
 
+// Pre-match pool — does NOT include live matches.
 export const allMatches: MatchData[] = [
   ...featuredMatches,
-  ...liveMatches,
   ...carouselMatches,
   ...volleyballMatches,
 ];
 
+/** Search pre-match first, then live. */
 export function getMatchById(id: string): MatchData | undefined {
-  return allMatches.find((m) => m.id === id);
+  return allMatches.find((m) => m.id === id) ?? liveMatches.find((m) => m.id === id);
 }

@@ -94,8 +94,10 @@ export async function getUniqueLeaguesBySport(sport: string): Promise<string[]> 
 
 export async function getMatchById(id: string): Promise<MatchData | undefined> {
   // return apiRequest<MatchData>(`/matches/${id}`);
-  const matches = await getAllMatches();
-  return matches.find((m) => m.id === id);
+  // Search pre-match first, then live — they are kept in separate endpoints.
+  const preMatch = (await getAllMatches()).find((m) => m.id === id);
+  if (preMatch) return preMatch;
+  return (await getLiveMatches()).find((m) => m.id === id);
 }
 
 export async function getMatchStatistics(matchId: string): Promise<MatchStatistics | null> {
