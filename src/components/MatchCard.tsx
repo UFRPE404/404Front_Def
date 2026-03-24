@@ -86,9 +86,9 @@ const MatchCard = ({
           </div>
 
           {/* Confronto */}
-          <div className="flex items-center justify-between gap-3 py-1">
-            <div className="flex-1 text-right">
-              <span className="text-base sm:text-lg font-bold text-foreground line-clamp-2 leading-tight uppercase">
+          <div className="flex items-stretch justify-between gap-3 py-1">
+            <div className="flex-1 flex items-center justify-end min-h-[2.75rem] sm:min-h-[3rem]">
+              <span className="text-base sm:text-lg font-bold text-foreground leading-tight uppercase line-clamp-2 text-right">
                 {teamA}
               </span>
             </div>
@@ -105,8 +105,8 @@ const MatchCard = ({
               )}
             </div>
 
-            <div className="flex-1 text-left">
-              <span className="text-base sm:text-lg font-bold text-foreground line-clamp-2 leading-tight uppercase">
+            <div className="flex-1 flex items-center justify-start min-h-[2.75rem] sm:min-h-[3rem]">
+              <span className="text-base sm:text-lg font-bold text-foreground leading-tight uppercase line-clamp-2">
                 {teamB}
               </span>
             </div>
