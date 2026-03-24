@@ -1,8 +1,18 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, BarChart3, Zap } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { TrendingUp, BarChart3, Zap, LineChart, Tv2, Ticket, BookOpen, Trophy, Target } from "lucide-react";
 
 const HeroBanner = () => {
+  const [open, setOpen] = useState(false);
+
+  const scrollToSugestoes = () => {
+    const el = document.getElementById("banner-ao-vivo");
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
+    <>
     <section
       className="relative overflow-hidden rounded-2xl mx-4 mt-4 bg-cover bg-center"
       style={{
@@ -55,10 +65,10 @@ const HeroBanner = () => {
           real. Seu assistente para decisões mais fundamentadas.
         </p>
         <div className="flex items-center gap-3 mb-8">
-          <Button variant="hero" size="lg">
+          <Button variant="hero" size="lg" onClick={scrollToSugestoes}>
             Começar análise
           </Button>
-          <Button variant="outline" size="lg">
+          <Button variant="outline" size="lg" onClick={() => setOpen(true)}>
             Como funciona
           </Button>
         </div>
@@ -74,6 +84,82 @@ const HeroBanner = () => {
         </div>
       </div>
     </section>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              O que é o FutData?
+            </DialogTitle>
+          </DialogHeader>
+
+          <p className="text-sm text-muted-foreground -mt-1">
+            Sua plataforma completa de análise esportiva integrada à Esportes da Sorte.
+          </p>
+
+          <div className="grid grid-cols-2 gap-4 mt-1">
+            {/* Coluna esquerda */}
+            <div className="space-y-3">
+              <div className="p-3 rounded-xl border border-border/50" style={{ background: "hsl(var(--surface-elevated))" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <LineChart className="w-4 h-4 text-primary shrink-0" />
+                  <p className="text-[10px] uppercase font-bold text-primary tracking-wider">Análise de Partidas</p>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">Estatísticas, escalações, confrontos diretos (H2H), movimentação de odds e probabilidades para cada desfecho — tudo antes do apito inicial.</p>
+              </div>
+
+              <div className="p-3 rounded-xl border border-border/50" style={{ background: "hsl(var(--surface-elevated))" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Tv2 className="w-4 h-4 text-primary shrink-0" />
+                  <p className="text-[10px] uppercase font-bold text-primary tracking-wider">Acompanhamento ao Vivo</p>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">Placares em tempo real, período do jogo e previsões dinâmicas que se atualizam conforme o jogo evolui.</p>
+              </div>
+
+              <div className="p-3 rounded-xl border border-border/50" style={{ background: "hsl(var(--surface-elevated))" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Target className="w-4 h-4 text-primary shrink-0" />
+                  <p className="text-[10px] uppercase font-bold text-primary tracking-wider">Sugestões de Apostas</p>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">Picks diários selecionados por algoritmos — desde apostas de alto valor até as mais seguras, com justificativas claras para cada escolha.</p>
+              </div>
+            </div>
+
+            {/* Coluna direita */}
+            <div className="space-y-3">
+              <div className="p-3 rounded-xl border border-border/50" style={{ background: "hsl(var(--surface-elevated))" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Trophy className="w-4 h-4 text-primary shrink-0" />
+                  <p className="text-[10px] uppercase font-bold text-primary tracking-wider">Múltiplos Esportes</p>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">Futebol, Basquete, Tînis e Vôlei com estatísticas adaptadas, cronogramas semanais e partidas em destaque por modalidade.</p>
+              </div>
+
+              <div className="p-3 rounded-xl border border-border/50" style={{ background: "hsl(var(--surface-elevated))" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Ticket className="w-4 h-4 text-primary shrink-0" />
+                  <p className="text-[10px] uppercase font-bold text-primary tracking-wider">Bilhete de Apostas</p>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">Adicione seleções pelo site, acompanhe odds combinadas e gerencie suas apostas sem sair da plataforma.</p>
+              </div>
+
+              <div className="p-3 rounded-xl border border-border/50" style={{ background: "hsl(var(--surface-elevated))" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <BookOpen className="w-4 h-4 text-primary shrink-0" />
+                  <p className="text-[10px] uppercase font-bold text-primary tracking-wider">Interpretação Inteligente</p>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">Probabilidades e métricas traduzidas em linguagem clara para decisões fundamentadas — baseadas em dados reais, não em achismos.</p>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground/60 pt-3 border-t border-border">
+            Esta plataforma é um serviço de informação e análise esportiva. Aposte com responsabilidade.
+          </p>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

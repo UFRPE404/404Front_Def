@@ -19,24 +19,15 @@ const Index = () => {
       <Navbar />
       <main className="max-w-7xl mx-auto pb-8">
         <HeroBanner />
-        <div className="flex flex-col lg:flex-row gap-6 px-4 mt-6">
+        <div id="inicio" className="flex flex-col lg:flex-row gap-6 px-4 mt-6">
           <SportsSidebar activeSport={activeSport} onSportChange={setActiveSport} />
           <FeaturedMatches sport={activeSport} />
         </div>
 
-        {/* Banner separator with neon effect */}
-        <div className="px-4 mt-10 mb-8">
-          <div className="relative overflow-hidden rounded-xl border border-primary/40 p-8 shadow-xl transition-all duration-500 hover:border-primary/60"
-            style={{
-              background: "linear-gradient(135deg, hsl(var(--hero-gradient-from))/15, hsl(var(--hero-gradient-to))/15)",
-              boxShadow: "0 0 20px hsl(var(--primary) / 0.2), 0 0 40px hsl(var(--primary) / 0.1), inset 0 0 15px hsl(var(--primary) / 0.08)"
-            }}>
-            <div className="relative z-10 flex flex-col items-center justify-center text-center gap-2">
-              <h3 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                Acompanhe os Jogos ao Vivo
-              </h3>
-              <p className="text-sm text-muted-foreground">Partidas em tempo real com análises instantâneas</p>
-            </div>
+        {/* Banner separator - Live matches */}
+        <div id="banner-ao-vivo" className="px-4 mt-10 mb-8" style={{ scrollMarginTop: "67px" }}>
+          <div className="overflow-hidden rounded-xl shadow-xl h-44">
+            <img src="/1.png" alt="Jogos ao Vivo" className="w-full h-full object-cover" />
           </div>
         </div>
 
@@ -61,18 +52,9 @@ const Index = () => {
         </div>
 
         {/* Suggestions banner */}
-        <div className="px-4 mt-10 mb-8">
-          <div className="relative overflow-hidden rounded-xl border border-primary/40 p-8 shadow-xl transition-all duration-500 hover:border-primary/60"
-            style={{
-              background: "linear-gradient(135deg, hsl(var(--hero-gradient-from))/15, hsl(var(--hero-gradient-to))/15)",
-              boxShadow: "0 0 20px hsl(var(--primary) / 0.2), 0 0 40px hsl(var(--primary) / 0.1), inset 0 0 15px hsl(var(--primary) / 0.08)"
-            }}>
-            <div className="relative z-10 flex flex-col items-center justify-center text-center gap-2">
-              <h3 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                Sugestões de Apostas do Dia
-              </h3>
-              <p className="text-sm text-muted-foreground">As melhores oportunidades selecionadas para você</p>
-            </div>
+        <div id="sugestoes" className="px-4 mt-10 mb-8">
+          <div className="overflow-hidden rounded-xl shadow-xl h-44">
+            <img src="/2.png" alt="Sugestões de Apostas" className="w-full h-full object-cover" />
           </div>
         </div>
 
@@ -82,6 +64,6 @@ const Index = () => {
       <BetSlip />
     </div>
   );
-};
+}; 
 
 export default Index;

@@ -31,8 +31,7 @@ const SuggestionsCarousel = () => {
 
   return (
     <section className="px-4 mt-8">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-foreground">Sugestões de Apostas do Dia</h2>
+      <div className="flex items-center justify-end mb-4">
         <div className="flex items-center gap-1">
           <button
             onClick={() => scroll("left")}
