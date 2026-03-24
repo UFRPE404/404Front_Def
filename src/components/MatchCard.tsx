@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { generateMatchAnalysis } from "@/utils/matchAnalysis";
-import { Flag, Square } from "lucide-react";
+import { useMemo } from "react";
 
 interface MatchProps {
   id: string;
@@ -17,18 +17,117 @@ interface MatchProps {
   cardsB?: { yellow: number; red: number };
   odds: [number, number, number];
   sport?: string;
+  period?: string;
+  date?: string;
 }
 
 const INSIGHT_COLORS = ["--insight-positive", "--insight-warning", "--insight-info"];
+
+/** Deterministic pseudo-random from team name — stable across re-renders */
+function teamSeed(name: string): number {
+  return name.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+}
+
+/** Generate mock "last 10 matches" averages for a team, tailored by sport */
+function generateTeamAvgStats(teamName: string, sport?: string) {
+  const s = teamSeed(teamName);
+  const r = (salt: number) => ((s * (salt + 1) * 17) % 100) / 100; // 0..1
+
+  if (sport === "Basquete") {
+    return [
+      { label: "Pontos/jogo", value: +(98 + r(1) * 24).toFixed(1) },
+      { label: "Rebotes/jogo", value: +(38 + r(2) * 12).toFixed(1) },
+      { label: "Assist./jogo", value: +(20 + r(3) * 10).toFixed(1) },
+    ];
+  }
+  if (sport === "Tênis") {
+    return [
+      { label: "Aces/jogo", value: +(4 + r(1) * 8).toFixed(1) },
+      { label: "1° Serv. %", value: +(58 + r(2) * 15).toFixed(0) + "%" },
+      { label: "Break Pts/jogo", value: +(1 + r(3) * 4).toFixed(1) },
+    ];
+  }
+  if (sport === "Vôlei") {
+    return [
+      { label: "Pontos/jogo", value: +(55 + r(1) * 20).toFixed(1) },
+      { label: "Aces/jogo", value: +(2 + r(2) * 5).toFixed(1) },
+      { label: "Bloq./jogo", value: +(3 + r(3) * 5).toFixed(1) },
+    ];
+  }
+  // Futebol (default)
+  return [
+    { label: "Gols/jogo", value: +(0.8 + r(1) * 2.2).toFixed(1) },
+    { label: "Cartões/jogo", value: +(1.2 + r(2) * 2.8).toFixed(1) },
+    { label: "Escanteios/jogo", value: +(3.5 + r(3) * 5.5).toFixed(1) },
+  ];
+}
+
+/** Generate deterministic live match stats (A vs B) by sport */
+function generateLiveStats(teamA: string, teamB: string, odds: [number, number, number], sport?: string) {
+  const sA = teamSeed(teamA);
+  const sB = teamSeed(teamB);
+  const bias = odds[0] < odds[2] ? 1.12 : 0.88;
+  const rA = (salt: number) => ((sA * (salt + 1) * 13) % 100) / 100;
+  const rB = (salt: number) => ((sB * (salt + 1) * 13) % 100) / 100;
+
+  if (sport === "Basquete") {
+    return [
+      { label: "Rebotes", a: Math.round(32 + rA(1) * 14 * bias), b: Math.round(32 + rB(1) * 14 * (2 - bias)) },
+      { label: "Assistências", a: Math.round(16 + rA(2) * 12 * bias), b: Math.round(16 + rB(2) * 12 * (2 - bias)) },
+      { label: "Turnovers", a: Math.round(8 + rA(3) * 8 * (2 - bias)), b: Math.round(8 + rB(3) * 8 * bias) },
+    ];
+  }
+  if (sport === "Tênis") {
+    return [
+      { label: "Aces", a: Math.round(3 + rA(1) * 8 * bias), b: Math.round(3 + rB(1) * 8 * (2 - bias)) },
+      { label: "Winners", a: Math.round(12 + rA(2) * 18 * bias), b: Math.round(12 + rB(2) * 18 * (2 - bias)) },
+      { label: "Erros N.F.", a: Math.round(8 + rA(3) * 14 * (2 - bias)), b: Math.round(8 + rB(3) * 14 * bias) },
+    ];
+  }
+  if (sport === "Vôlei") {
+    return [
+      { label: "Ataques", a: Math.round(22 + rA(1) * 16 * bias), b: Math.round(22 + rB(1) * 16 * (2 - bias)) },
+      { label: "Bloqueios", a: Math.round(3 + rA(2) * 6 * bias), b: Math.round(3 + rB(2) * 6 * (2 - bias)) },
+      { label: "Erros", a: Math.round(6 + rA(3) * 10 * (2 - bias)), b: Math.round(6 + rB(3) * 10 * bias) },
+    ];
+  }
+  // Futebol
+  return [
+    { label: "Posse", a: Math.round(42 + rA(1) * 16 * bias) + "%", b: Math.round(42 + rB(1) * 16 * (2 - bias)) + "%" },
+    { label: "Finalizações", a: Math.round(4 + rA(2) * 10 * bias), b: Math.round(4 + rB(2) * 10 * (2 - bias)) },
+    { label: "Faltas", a: Math.round(6 + rA(3) * 10 * (2 - bias)), b: Math.round(6 + rB(3) * 10 * bias) },
+  ];
+}
+
+/** Compact stat row used in both live and pre-match hover */
+function StatRow({ label, valueA, valueB, color }: { label: string; valueA: string | number; valueB: string | number; color: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-8 text-right text-[13px] font-bold tabular-nums text-foreground/80">{valueA}</span>
+      <div className="flex-1 flex items-center justify-center">
+        <span className="text-[10px] uppercase font-bold tracking-widest" style={{ color: `hsl(var(${color}))` }}>
+          {label}
+        </span>
+      </div>
+      <span className="w-8 text-left text-[13px] font-bold tabular-nums text-foreground/80">{valueB}</span>
+    </div>
+  );
+}
 
 const MatchCard = ({ 
   id, league, time, live, teamA, teamB, scoreA, scoreB, 
   cornersA = 0, cornersB = 0, 
   cardsA = { yellow: 0, red: 0 }, cardsB = { yellow: 0, red: 0 }, 
-  odds, sport 
+  odds, sport, period, date
 }: MatchProps) => {
   const navigate = useNavigate();
   const matchAnalysis = generateMatchAnalysis(time, scoreA, scoreB, odds, sport, live);
+
+  // Pre-match: deterministic "last 10 matches" averages
+  const statsA = useMemo(() => generateTeamAvgStats(teamA, sport), [teamA, sport]);
+  const statsB = useMemo(() => generateTeamAvgStats(teamB, sport), [teamB, sport]);
+  // Live: deterministic in-match stats
+  const liveStats = useMemo(() => generateLiveStats(teamA, teamB, odds, sport), [teamA, teamB, odds, sport]);
 
   const handleCardClick = () => {
     navigate(`/analises/${encodeURIComponent(id)}`);
@@ -63,26 +162,37 @@ const MatchCard = ({
             ========================================= */}
         <div className="flex flex-col gap-4">
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <span className="px-2.5 py-1 rounded-md bg-secondary/50 text-[11px] font-bold uppercase tracking-widest text-secondary-foreground truncate max-w-[60%]">
+          <div className="flex items-center justify-between gap-2">
+            <span className="px-2.5 py-1 rounded-md bg-secondary/50 text-[11px] font-bold uppercase tracking-widest text-secondary-foreground truncate min-w-0">
               {league}
             </span>
-            
-            <div className="flex items-center gap-1.5">
-              {live ? (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-destructive/10 text-destructive">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
-                  </span>
-                  <span className="text-[11px] font-bold tracking-widest uppercase">Ao Vivo</span>
-                </div>
-              ) : (
-                <span className="text-[13px] font-semibold text-muted-foreground bg-secondary/30 px-2.5 py-1 rounded-md tracking-widest">
+
+            {live ? (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-destructive/10 text-destructive shrink-0">
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
+                </span>
+                <span className="text-[11px] font-bold tracking-widest uppercase">Ao Vivo</span>
+                <span className="text-[11px] font-bold tabular-nums tracking-widest text-destructive/70">
+                  · {time}{period ? ` · ${period}` : ""}
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 bg-secondary/30 px-2.5 py-1 rounded-md shrink-0">
+                {date && (
+                  <>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-primary/80 leading-none">
+                      {date}
+                    </span>
+                    <span className="text-muted-foreground/30 text-[11px] leading-none">·</span>
+                  </>
+                )}
+                <span className="text-[13px] font-semibold text-muted-foreground tracking-widest leading-none">
                   {time}
                 </span>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Confronto */}
@@ -117,86 +227,56 @@ const MatchCard = ({
             ÁREA EXPANSÍVEL (ON HOVER)
             ========================================= */}
         <div className="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-500 ease-in-out">
-          <div className="overflow-hidden flex flex-col gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+          <div className="overflow-hidden flex flex-col gap-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
             
-            <div className="pt-2 border-t border-border/40 mt-3" />
+            <div className="border-t border-border/40 mt-3" />
 
-            {/* Estatísticas Secundárias (Escanteios e Cartões) */}
-            <div className="flex flex-col gap-2 px-2">
-              
-              {/* Escanteios */}
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-lg font-semibold w-6 text-right tabular-nums text-foreground/80">{cornersA}</span>
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Flag className="w-3.5 h-3.5" />
-                  <span className="text-[11px] uppercase font-bold tracking-widest">Escanteios</span>
-                </div>
-                <span className="text-lg font-semibold w-6 text-left tabular-nums text-foreground/80">{cornersB}</span>
+            {/* Win Probability Bar — compact */}
+            <div className="flex items-center gap-1.5 px-1">
+              <span className="text-[12px] font-bold tabular-nums shrink-0" style={{ color: "hsl(var(--insight-positive))" }}>{probA}%</span>
+              <div className="flex-1 h-1.5 flex rounded-full overflow-hidden bg-secondary/40">
+                <div className="h-full transition-all duration-700" style={{ width: `${probA}%`, background: "hsl(var(--insight-positive))" }} />
+                {probDraw > 3 && (
+                  <div className="h-full bg-muted-foreground/30 transition-all duration-700" style={{ width: `${probDraw}%` }} />
+                )}
+                <div className="h-full transition-all duration-700" style={{ width: `${probB}%`, background: "hsl(var(--insight-warning))" }} />
               </div>
-
-              {/* Cartões */}
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center justify-end w-12 gap-1.5 tabular-nums">
-                  {cardsA.red > 0 && <span className="flex items-center text-destructive text-lg font-semibold">{cardsA.red} <Square className="w-3.5 h-3.5 ml-0.5 fill-destructive" /></span>}
-                  <span className="flex items-center text-yellow-500 text-lg font-semibold">{cardsA.yellow} <Square className="w-3.5 h-3.5 ml-0.5 fill-yellow-500" /></span>
-                </div>
-                
-                <span className="text-[11px] uppercase font-bold text-muted-foreground tracking-widest">Cartões</span>
-                
-                <div className="flex items-center justify-start w-12 gap-1.5 tabular-nums">
-                  <span className="flex items-center text-yellow-500 text-lg font-semibold"><Square className="w-3.5 h-3.5 mr-0.5 fill-yellow-500" /> {cardsB.yellow}</span>
-                  {cardsB.red > 0 && <span className="flex items-center text-destructive text-lg font-semibold"><Square className="w-3.5 h-3.5 mr-0.5 fill-destructive" /> {cardsB.red}</span>}
-                </div>
-              </div>
-
+              <span className="text-[12px] font-bold tabular-nums shrink-0" style={{ color: "hsl(var(--insight-warning))" }}>{probB}%</span>
             </div>
 
-            {/* Win Probability Bar */}
-            <div className="w-full flex flex-col gap-1 px-1">
-              <span className="text-[10px] uppercase font-bold text-muted-foreground text-center mb-1 tracking-widest">Probabilidade de Vitória</span>
-              <div className="flex items-center gap-2">
-                <span className="text-base font-semibold text-foreground/70 w-8 text-right tracking-widest" style={{ color: "hsl(var(--insight-positive))" }}>{probA}%</span>
-                <div className="flex-1 h-1.5 flex rounded-full overflow-hidden bg-secondary/40">
-                  <div className="h-full transition-all duration-700" style={{ width: `${probA}%`, background: "hsl(var(--insight-positive))" }} />
-                  {probDraw > 3 && (
-                    <div className="h-full bg-muted-foreground/30 transition-all duration-700" style={{ width: `${probDraw}%` }} />
-                  )}
-                  <div className="h-full transition-all duration-700" style={{ width: `${probB}%`, background: "hsl(var(--insight-warning))" }} />
-                </div>
-                <span className="text-base font-semibold text-foreground/70 w-8 text-left tracking-widest" style={{ color: "hsl(var(--insight-warning))" }}>{probB}%</span>
+            {live ? (
+              /* ====== LIVE: Stats reais da partida A vs B ====== */
+              <div className="flex flex-col gap-1.5 bg-secondary/20 rounded-lg p-2.5 border border-border/30">
+                <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest text-center mb-0.5">
+                  Estatísticas da Partida
+                </span>
+                {liveStats.map((stat, i) => (
+                  <StatRow
+                    key={stat.label}
+                    label={stat.label}
+                    valueA={stat.a}
+                    valueB={stat.b}
+                    color={INSIGHT_COLORS[i]}
+                  />
+                ))}
               </div>
-            </div>
-
-            {/* Dashboard-Style Insights Grid */}
-            <div className="grid grid-cols-3 gap-2 pb-2">
-              {matchAnalysis.lines.map((line, i) => (
-                <div 
-                  key={line.label} 
-                  className="bg-secondary/30 rounded-xl p-2.5 flex flex-col justify-between border border-border/30 hover:bg-secondary/50 transition-colors"
-                >
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 truncate tracking-widest">
-                    {line.label}
-                  </span>
-                  <div className="flex items-end justify-between gap-1 mb-2">
-                    <span className="text-sm font-bold text-foreground leading-none truncate pb-0.5">
-                      {line.prediction}
-                    </span>
-                    <span className="text-sm font-semibold text-muted-foreground leading-none tracking-wide">
-                      {line.percentage}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-background/50 h-1 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-1000 ease-out"
-                      style={{ 
-                        width: `${line.percentage}%`, 
-                        background: `hsl(var(${INSIGHT_COLORS[i]}))` 
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+            ) : (
+              /* ====== PRÉ-JOGO: Média últimas 10 partidas A vs B ====== */
+              <div className="flex flex-col gap-1.5 bg-secondary/20 rounded-lg p-2.5 border border-border/30">
+                <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest text-center mb-0.5">
+                  Média últimas 10 partidas
+                </span>
+                {statsA.map((stat, i) => (
+                  <StatRow
+                    key={stat.label}
+                    label={stat.label}
+                    valueA={stat.value}
+                    valueB={statsB[i].value}
+                    color={INSIGHT_COLORS[i]}
+                  />
+                ))}
+              </div>
+            )}
 
           </div>
         </div>

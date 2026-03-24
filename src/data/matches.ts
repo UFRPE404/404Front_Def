@@ -69,8 +69,9 @@ export interface MatchData {
   referee?: string;
   logoA?: string;
   logoB?: string;
-  period?: string;        // "1st Half", "Q3", "2º Set", etc.
+  period?: string;        // "1T"/"2T", "Q1"–"Q4", etc.
   minuteOfPlay?: number;  // actual elapsed game minutes (for live)
+  date?: string;          // display date for pre-match cards ("Hoje", "Amanhã", "25 Mar")
 }
 
 function slugify(teamA: string, teamB: string): string {
@@ -92,6 +93,7 @@ export const featuredMatches: MatchData[] = [
     teamB: "Manchester City",
     odds: [2.10, 3.40, 3.25],
     sport: "Futebol",
+    date: "Hoje",
   },
   {
     id: slugify("Arsenal", "Liverpool"),
@@ -101,6 +103,7 @@ export const featuredMatches: MatchData[] = [
     teamB: "Liverpool",
     odds: [2.60, 3.10, 2.75],
     sport: "Futebol",
+    date: "Hoje",
   },
   {
     id: slugify("Barcelona", "Atlético Madrid"),
@@ -110,6 +113,7 @@ export const featuredMatches: MatchData[] = [
     teamB: "Atlético Madrid",
     odds: [1.85, 3.50, 4.10],
     sport: "Futebol",
+    date: "Hoje",
   },
   {
     id: slugify("Inter Milan", "Juventus"),
@@ -119,6 +123,7 @@ export const featuredMatches: MatchData[] = [
     teamB: "Juventus",
     odds: [2.20, 3.30, 3.15],
     sport: "Futebol",
+    date: "Hoje",
   },
 ];
 
@@ -135,6 +140,7 @@ export const liveMatches: MatchData[] = [
     scoreB: 2,
     odds: [2.45, 3.20, 2.90],
     sport: "Futebol",
+    period: "2T",
   },
   {
     id: slugify("Chelsea", "Tottenham"),
@@ -147,6 +153,7 @@ export const liveMatches: MatchData[] = [
     scoreB: 1,
     odds: [3.10, 3.40, 2.15],
     sport: "Futebol",
+    period: "1T",
   },
   {
     id: slugify("Sevilla", "Valencia"),
@@ -159,6 +166,7 @@ export const liveMatches: MatchData[] = [
     scoreB: 1,
     odds: [1.25, 5.50, 9.00],
     sport: "Futebol",
+    period: "2T",
   },
   {
     id: slugify("Corinthians", "São Paulo"),
@@ -171,11 +179,12 @@ export const liveMatches: MatchData[] = [
     scoreB: 0,
     odds: [2.30, 3.15, 3.05],
     sport: "Futebol",
+    period: "1T",
   },
   {
     id: slugify("Los Angeles Lakers", "Golden State Warriors"),
     league: "NBA",
-    time: "42'",
+    time: "09'",
     live: true,
     teamA: "Los Angeles Lakers",
     teamB: "Golden State Warriors",
@@ -183,11 +192,12 @@ export const liveMatches: MatchData[] = [
     scoreB: 72,
     odds: [1.95, 3.50, 1.85],
     sport: "Basquete",
+    period: "3Q",
   },
   {
     id: slugify("Boston Celtics", "Miami Heat"),
     league: "NBA",
-    time: "28'",
+    time: "06'",
     live: true,
     teamA: "Boston Celtics",
     teamB: "Miami Heat",
@@ -195,6 +205,7 @@ export const liveMatches: MatchData[] = [
     scoreB: 51,
     odds: [1.85, 3.60, 1.95],
     sport: "Basquete",
+    period: "2Q",
   },
   {
     id: slugify("Novak Djokovic", "Carlos Alcaraz"),
@@ -227,6 +238,7 @@ export const carouselMatches: MatchData[] = [
     teamB: "Borussia Dortmund",
     odds: [1.75, 3.80, 4.20],
     sport: "Futebol",
+    date: "Hoje",
   },
   {
     id: slugify("PSG", "Marseille"),
@@ -236,6 +248,7 @@ export const carouselMatches: MatchData[] = [
     teamB: "Marseille",
     odds: [1.50, 4.10, 5.50],
     sport: "Futebol",
+    date: "Hoje",
   },
   {
     id: slugify("Sport Recife", "Ceará"),
@@ -245,6 +258,7 @@ export const carouselMatches: MatchData[] = [
     teamB: "Ceará",
     odds: [2.40, 3.10, 2.95],
     sport: "Futebol",
+    date: "Hoje",
   },
   {
     id: slugify("Grêmio", "Cruzeiro"),
@@ -254,6 +268,7 @@ export const carouselMatches: MatchData[] = [
     teamB: "Cruzeiro",
     odds: [2.15, 3.25, 3.30],
     sport: "Futebol",
+    date: "Hoje",
   },
   {
     id: slugify("Ajax", "PSV"),
@@ -263,6 +278,7 @@ export const carouselMatches: MatchData[] = [
     teamB: "PSV",
     odds: [2.50, 3.30, 2.70],
     sport: "Futebol",
+    date: "Amanhã",
   },
   {
     id: slugify("Benfica", "Porto"),
@@ -272,6 +288,7 @@ export const carouselMatches: MatchData[] = [
     teamB: "Porto",
     odds: [2.05, 3.40, 3.45],
     sport: "Futebol",
+    date: "Amanhã",
   },
   {
     id: slugify("Los Angeles Lakers", "Denver Nuggets"),
@@ -281,6 +298,7 @@ export const carouselMatches: MatchData[] = [
     teamB: "Denver Nuggets",
     odds: [2.30, 1.95, 1.70],
     sport: "Basquete",
+    date: "Amanhã",
   },
   {
     id: slugify("Boston Celtics", "Philadelphia 76ers"),
@@ -290,6 +308,7 @@ export const carouselMatches: MatchData[] = [
     teamB: "Philadelphia 76ers",
     odds: [1.85, 2.10, 1.95],
     sport: "Basquete",
+    date: "Amanhã",
   },
   {
     id: slugify("Miami Heat", "Chicago Bulls"),
@@ -299,6 +318,7 @@ export const carouselMatches: MatchData[] = [
     teamB: "Chicago Bulls",
     odds: [1.65, 2.20, 2.30],
     sport: "Basquete",
+    date: "Amanhã",
   },
   {
     id: slugify("Novak Djokovic", "Carlos Alcaraz") + "-pre",
@@ -308,6 +328,7 @@ export const carouselMatches: MatchData[] = [
     teamB: "Carlos Alcaraz",
     odds: [2.75, 1.45, 1.55],
     sport: "Tênis",
+    date: "Hoje",
   },
   {
     id: slugify("Iga Swiatek", "Aryna Sabalenka") + "-pre",
@@ -317,6 +338,7 @@ export const carouselMatches: MatchData[] = [
     teamB: "Aryna Sabalenka",
     odds: [2.45, 1.50, 1.65],
     sport: "Tênis",
+    date: "Hoje",
   },
   {
     id: slugify("Jannik Sinner", "Daniil Medvedev"),
@@ -326,6 +348,7 @@ export const carouselMatches: MatchData[] = [
     teamB: "Daniil Medvedev",
     odds: [1.95, 1.85, 1.90],
     sport: "Tênis",
+    date: "Amanhã",
   },
 ];
 
@@ -338,6 +361,7 @@ export const volleyballMatches: MatchData[] = [
     teamB: "Minas Tênis",
     odds: [1.85, 2.20, 3.50],
     sport: "Vôlei",
+    date: "Hoje",
   },
   {
     id: slugify("Osasco Audax", "Praia Clube"),
@@ -347,6 +371,7 @@ export const volleyballMatches: MatchData[] = [
     teamB: "Praia Clube",
     odds: [2.10, 1.95, 3.20],
     sport: "Vôlei",
+    date: "Hoje",
   },
   {
     id: slugify("Vedacit Vôlei", "Marechal"),
@@ -356,6 +381,7 @@ export const volleyballMatches: MatchData[] = [
     teamB: "Marechal",
     odds: [1.70, 2.50, 3.80],
     sport: "Vôlei",
+    date: "Amanhã",
   },
 ];
 
