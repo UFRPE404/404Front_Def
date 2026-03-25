@@ -1,0 +1,646 @@
+        {/* ====== TAB: ESCALACOES ====== */}
+        {activeTab === "escalacoes" && (match?.sport === "Futebol" || match?.sport === "Volei" || !match?.sport) && (
+          <div className="space-y-5">
+            {!match.live && (
+              <RevealSection>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium w-fit bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"><AlertTriangle className="w-3.5 h-3.5" /> Escalacao estimada</div>
+              </RevealSection>
+            )}
+            <RevealSection delay={20}>
+              <div className="flex gap-1.5 p-1 rounded-xl bg-secondary/40">
+                <button onClick={() => setSelectedTeam("home")} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${selectedTeam === "home" ? "bg-card text-foreground shadow-sm border border-border/50" : "text-muted-foreground hover:text-foreground"}`}>{match.teamA} {(!match.sport || match.sport === "Futebol") && details.homeLineup.formation ? `(${details.homeLineup.formation})` : ""}</button>
+                <button onClick={() => setSelectedTeam("away")} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${selectedTeam === "away" ? "bg-card text-foreground shadow-sm border border-border/50" : "text-muted-foreground hover:text-foreground"}`}>{match.teamB} {(!match.sport || match.sport === "Futebol") && details.awayLineup.formation ? `(${details.awayLineup.formation})` : ""}</button>
+              </div>
+            </RevealSection>
+            {(() => {
+              const lineup = selectedTeam === "home" ? details.homeLineup : details.awayLineup;
+              return (!match.sport || match.sport === "Futebol") ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                  <RevealSection delay={40}>
+                    <SectionCard>
+                      <div className="flex items-center justify-between mb-3">
+                        <h2 className="text-sm font-semibold text-foreground">Formacao {lineup.formation}</h2>
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1"><User className="w-3 h-3" /> {lineup.coach}</span>
+                      </div>
+                      <div className="relative w-full rounded-xl overflow-hidden" style={{ background: "linear-gradient(180deg, hsl(148, 55%, 16%) 0%, hsl(148, 50%, 20%) 50%, hsl(148, 55%, 16%) 100%)", paddingTop: "125%" }}>
+                        <div className="absolute inset-0 p-3 pb-6">
+                          {/* Field markings */}
+                          <div className="absolute inset-4 border-2 border-white/20 rounded-lg">
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-36 h-14 border-2 border-white/20 border-t-0 rounded-b-lg" />
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-6 border-2 border-white/20 border-t-0 rounded-b" />
+                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-36 h-14 border-2 border-white/20 border-b-0 rounded-t-lg" />
+                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-6 border-2 border-white/20 border-b-0 rounded-t" />
+                            <div className="absolute top-1/2 left-0 right-0 border-t-2 border-white/20" />
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border-2 border-white/20 rounded-full" />
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white/30 rounded-full" />
+                          </div>
+                          {/* Player positions */}
+                          {(() => {
+                            const formationLines = lineup.formation.split("-").map(Number);
+                            const rows: Player[][] = [];
+                            let idx = 0;
+                            rows.push([lineup.players[idx++]]);
+                            for (const count of formationLines) { rows.push(lineup.players.slice(idx, idx + count)); idx += count; }
+                            const totalRows = rows.length;
+                            return rows.map((row, rowIdx) => {
+                              const yPercent = 6 + (rowIdx / (totalRows - 1)) * 84;
+                              return (
+                                <div key={rowIdx} className="absolute left-0 right-0 flex justify-center" style={{ top: `${yPercent}%` }}>
+                                  {row.map((p, pIdx) => {
+                                    const total = row.length;
+                                    const xOffset = total === 1 ? 50 : 12 + (pIdx / (total - 1)) * 76;
+                                    const isGk = rowIdx === 0;
+                                    const ratingVal = parseFloat(p.rating);
+                                    const ratingColor = ratingVal >= 7.5 ? "bg-emerald-500" : ratingVal >= 6.5 ? "bg-amber-500" : "bg-red-500";
+                                    return (
+                                      <div key={pIdx} className="flex flex-col items-center group" style={{ position: "absolute", left: `${xOffset}%`, transform: "translateX(-50%)" }}>
+                                        <div className={`relative w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-transform group-hover:scale-110 ${isGk ? "bg-amber-500 text-black" : "bg-primary text-primary-foreground"}`}>
+                                          {p.number}
+                                          <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-black text-white ${ratingColor} shadow-sm border border-black/20`}>{p.rating}</div>
+                                        </div>
+                                        <span className="text-[9px] font-bold text-white mt-1 text-center leading-tight max-w-[80px] truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{p.name.split(" ").pop()}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      </div>
+                    </SectionCard>
+                  </RevealSection>
+                  <div className="space-y-4">
+                    <RevealSection delay={80}>
+                      <SectionCard>
+                        <h3 className="text-xs font-semibold text-foreground flex items-center gap-2 mb-3"><Shirt className="w-3.5 h-3.5 text-primary" /> Titulares <span className="text-[10px] text-muted-foreground ml-auto">{lineup.players.length} jogadores</span></h3>
+                        <div className="space-y-1">
+                          {lineup.players.map((p, i) => {
+                            const ratingVal = parseFloat(p.rating);
+                            const ratingColor = ratingVal >= 7.5 ? "text-emerald-400 bg-emerald-500/10" : ratingVal >= 6.5 ? "text-amber-400 bg-amber-500/10" : "text-red-400 bg-red-500/10";
+                            return (
+                              <div key={i} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-secondary/30 transition-colors group">
+                                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${i === 0 ? "bg-amber-500/20 text-amber-400" : "bg-primary/10 text-primary"}`}>{p.number}</div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
+                                  <p className="text-[10px] text-muted-foreground">{p.position} {p.age ? `- ${p.age} anos` : ""}</p>
+                                </div>
+                                <span className={`text-xs font-black tabular-nums px-2 py-0.5 rounded-md ${ratingColor}`}>{p.rating}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </SectionCard>
+                    </RevealSection>
+                    <RevealSection delay={120}>
+                      <SectionCard>
+                        <h3 className="text-xs font-semibold text-foreground flex items-center gap-2 mb-3"><ArrowRightLeft className="w-3.5 h-3.5 text-muted-foreground" /> Reservas <span className="text-[10px] text-muted-foreground ml-auto">{lineup.substitutes.length} jogadores</span></h3>
+                        <div className="space-y-1">
+                          {lineup.substitutes.map((p, i) => {
+                            const ratingVal = parseFloat(p.rating);
+                            const ratingColor = ratingVal >= 7.5 ? "text-emerald-400 bg-emerald-500/10" : ratingVal >= 6.5 ? "text-amber-400 bg-amber-500/10" : "text-red-400 bg-red-500/10";
+                            return (
+                              <div key={i} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-secondary/30 transition-colors">
+                                <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 bg-secondary/60 text-muted-foreground">{p.number}</div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
+                                  <p className="text-[10px] text-muted-foreground">{p.position} {p.age ? `- ${p.age} anos` : ""}</p>
+                                </div>
+                                <span className={`text-xs font-black tabular-nums px-2 py-0.5 rounded-md ${ratingColor}`}>{p.rating}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </SectionCard>
+                    </RevealSection>
+                  </div>
+                </div>
+              ) : (
+                <RevealSection delay={40}>
+                  <SectionCard>
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-sm font-semibold text-foreground">Escalacao</h2>
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-1"><User className="w-3 h-3" /> {lineup.coach}</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {lineup.players.map((p, i) => {
+                        const ratingVal = parseFloat(p.rating);
+                        const ratingColor = ratingVal >= 7.5 ? "text-emerald-400 bg-emerald-500/10" : ratingVal >= 6.5 ? "text-amber-400 bg-amber-500/10" : "text-red-400 bg-red-500/10";
+                        return (
+                          <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold bg-primary text-primary-foreground">{p.number}</div>
+                            <div className="flex-1 min-w-0"><p className="text-sm font-semibold text-foreground">{p.name}</p><p className="text-[10px] text-muted-foreground">{p.position} - {p.age} anos</p></div>
+                            <span className={`text-xs font-black tabular-nums px-2 py-0.5 rounded-md ${ratingColor}`}>{p.rating}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </SectionCard>
+                </RevealSection>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* ====== TAB: CONFRONTOS ====== */}
+        {activeTab === "confrontos" && (
+          <div className="space-y-5">
+            {/* H2H Summary strip */}
+            <RevealSection>
+              <SectionCard>
+                <div className="flex items-center gap-3 mb-4">
+                  <Swords className="w-4 h-4 text-primary" />
+                  <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Historico Direto</h3>
+                  <span className="text-[10px] text-muted-foreground ml-auto">{h2hResults.length} jogos</span>
+                </div>
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  {[
+                    { label: match.teamA.split(" ").pop(), count: h2hResults.filter(r => r.winner === "home").length, color: "primary", bg: "bg-primary/10 border-primary/20" },
+                    { label: "Empates", count: h2hResults.filter(r => r.winner === "draw").length, color: "muted", bg: "bg-secondary/30 border-border/30" },
+                    { label: match.teamB.split(" ").pop(), count: h2hResults.filter(r => r.winner === "away").length, color: "foreground/70", bg: "bg-secondary/30 border-border/30" },
+                  ].map((item, i) => (
+                    <div key={i} className={`text-center py-3 rounded-xl border ${item.bg}`}>
+                      <span className={`block text-3xl font-black tabular-nums ${i === 0 ? "text-primary" : i === 2 ? "text-foreground/70" : "text-muted-foreground"}`}>{item.count}</span>
+                      <span className="text-[10px] text-muted-foreground font-medium">{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Win distribution bar */}
+                {(() => {
+                  const homeW = h2hResults.filter(r => r.winner === "home").length;
+                  const draws = h2hResults.filter(r => r.winner === "draw").length;
+                  const awayW = h2hResults.filter(r => r.winner === "away").length;
+                  const total = homeW + draws + awayW || 1;
+                  return (
+                    <div className="flex h-2.5 rounded-full overflow-hidden gap-0.5">
+                      <div className="bg-primary rounded-l-full transition-all" style={{ width: `${(homeW/total)*100}%` }} />
+                      <div className="bg-muted-foreground/30 transition-all" style={{ width: `${(draws/total)*100}%` }} />
+                      <div className="bg-foreground/40 rounded-r-full transition-all" style={{ width: `${(awayW/total)*100}%` }} />
+                    </div>
+                  );
+                })()}
+              </SectionCard>
+            </RevealSection>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* Radar comparison */}
+              <RevealSection delay={20}>
+                <SectionCard>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-1 h-4 rounded-full bg-primary" />
+                    <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Comparacao Tecnica</h3>
+                  </div>
+                  <div className="aspect-square max-w-[300px] mx-auto">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart cx="50%" cy="50%" outerRadius="68%" data={radarData}>
+                        <PolarGrid stroke="hsl(var(--border)/0.2)" gridType="polygon" />
+                        <PolarAngleAxis dataKey="stat" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9, fontWeight: 600 }} />
+                        <Radar name={match.teamA} dataKey={match.teamA} stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.15} strokeWidth={2.5} />
+                        <Radar name={match.teamB} dataKey={match.teamB} stroke="#f97316" fill="#f97316" fillOpacity={0.08} strokeWidth={2} />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex justify-center gap-6 mt-1">
+                    <span className="flex items-center gap-1.5 text-[11px] font-semibold"><span className="w-2.5 h-2.5 rounded-full bg-primary" />{match.teamA}</span>
+                    <span className="flex items-center gap-1.5 text-[11px] font-semibold"><span className="w-2.5 h-2.5 rounded-full bg-orange-500" />{match.teamB}</span>
+                  </div>
+                </SectionCard>
+              </RevealSection>
+
+              {/* H2H results list */}
+              <RevealSection delay={40}>
+                <SectionCard>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-1 h-4 rounded-full bg-primary" />
+                    <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Ultimos Jogos</h3>
+                  </div>
+                  <div className="space-y-2 max-h-[360px] overflow-y-auto thin-scrollbar pr-1">
+                    {h2hResults.map((r, i) => (
+                      <div key={i} className="relative rounded-xl overflow-hidden border border-border/20 hover:border-primary/20 transition-all">
+                        <div className={`absolute inset-y-0 left-0 w-1 ${r.winner === "home" ? "bg-emerald-500" : r.winner === "away" ? "bg-red-500" : "bg-muted-foreground/40"}`} />
+                        <div className="flex items-center gap-3 p-3 pl-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className={`text-[10px] font-black px-2 py-0.5 rounded ${r.winner === "home" ? "bg-emerald-500/10 text-emerald-400" : r.winner === "away" ? "bg-red-500/10 text-red-400" : "bg-muted text-muted-foreground"}`}>
+                                {r.winner === "home" ? "VIT" : r.winner === "away" ? "DER" : "EMP"}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground tabular-nums">{r.date}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-semibold ${r.winner === "home" ? "text-foreground" : "text-muted-foreground"}`}>{r.home}</span>
+                              <span className="text-sm font-black text-foreground tabular-nums bg-secondary/50 px-2.5 py-0.5 rounded-lg">{r.score}</span>
+                              <span className={`text-xs font-semibold ${r.winner === "away" ? "text-foreground" : "text-muted-foreground"}`}>{r.away}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </SectionCard>
+              </RevealSection>
+            </div>
+
+            {/* Patterns */}
+            <RevealSection delay={60}>
+              <SectionCard>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1 h-4 rounded-full bg-primary" />
+                  <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Padroes Relevantes</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {commonStats.map((cs, i) => (
+                    <div key={i} className="relative rounded-xl border border-border/20 p-4 hover:border-primary/20 hover:bg-primary/[0.02] transition-all group">
+                      <div className="flex items-center gap-2.5 mb-2">
+                        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-sm group-hover:bg-primary/15 transition-colors">{cs.icon}</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-foreground truncate">{cs.label}</p>
+                          <p className="text-[10px] text-muted-foreground">{cs.record}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1.5 rounded-full bg-muted/30 overflow-hidden">
+                          <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${cs.pct}%` }} />
+                        </div>
+                        <span className="text-xs font-black text-primary tabular-nums">{cs.pct}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </SectionCard>
+            </RevealSection>
+          </div>
+        )}
+
+        {/* ====== TAB: ODDS ====== */}
+        {activeTab === "odds" && (
+          <div className="space-y-5">
+            {/* Bookmaker Header */}
+            <RevealSection>
+              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-amber-600/10 via-amber-500/5 to-transparent border border-amber-500/20">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center"><span className="text-lg font-black text-amber-400">E</span></div>
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground">Esportes da Sorte</h3>
+                    <p className="text-[10px] text-muted-foreground">Odds atualizadas em tempo real</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] text-amber-400 font-medium"><CheckCircle2 className="w-3.5 h-3.5" /> Verificado</div>
+              </div>
+            </RevealSection>
+
+            {/* Resultado Final 1X2 */}
+            <RevealSection delay={20}>
+              <SectionCard>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Resultado Final</h3>
+                  <span className="text-[9px] text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">1X2</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: match.teamA, sub: "1", odd: match.odds[0], active: match.odds[0] === Math.min(...match.odds) },
+                    { label: "Empate", sub: "X", odd: match.odds[1], active: match.odds[1] === Math.min(...match.odds) },
+                    { label: match.teamB, sub: "2", odd: match.odds[2], active: match.odds[2] === Math.min(...match.odds) },
+                  ].map((m, i) => (
+                    <div key={i} className={`relative flex flex-col items-center gap-1.5 py-4 px-2 rounded-xl cursor-pointer transition-all border-2 ${m.active ? "border-primary bg-primary/5 shadow-sm shadow-primary/10" : "border-border/30 bg-secondary/20 hover:border-primary/30 hover:bg-primary/5"}`}>
+                      {m.active && <div className="absolute -top-2 left-1/2 -translate-x-1/2 text-[8px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">Favorito</div>}
+                      <span className="text-[10px] text-muted-foreground font-medium truncate w-full text-center">{m.label}</span>
+                      <span className={`text-2xl font-black tabular-nums ${m.active ? "text-primary" : "text-foreground"}`}>{m.odd.toFixed(2)}</span>
+                      <span className="text-[9px] text-muted-foreground tabular-nums">{Math.round((1 / m.odd) * 100)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </SectionCard>
+            </RevealSection>
+
+            {/* Market categories grid */}
+            <RevealSection delay={40}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Gols / Pontos */}
+                <SectionCard>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-1 h-4 rounded-full bg-emerald-500" />
+                    <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">{match.sport === "Basquete" ? "Total de Pontos" : match.sport === "Volei" ? "Total de Sets" : match.sport === "Tenis" ? "Total de Games" : "Gols"}</h3>
+                  </div>
+                  {(() => {
+                    const lines = match.sport === "Basquete"
+                      ? [{ l: "Mais/Menos 190.5", o: +(1.65+(match.odds[0]%0.08)).toFixed(2), u: +(2.15-(match.odds[0]%0.08)).toFixed(2) }, { l: "Mais/Menos 200.5", o: +(1.85+(match.odds[1]%0.07)).toFixed(2), u: +(1.95-(match.odds[1]%0.06)).toFixed(2) }, { l: "Mais/Menos 210.5", o: +(2.10+(match.odds[2]%0.09)).toFixed(2), u: +(1.72-(match.odds[2]%0.05)).toFixed(2) }, { l: "Mais/Menos 220.5", o: +(2.55+(match.odds[0]%0.12)).toFixed(2), u: +(1.48+(match.odds[1]%0.04)).toFixed(2) }]
+                      : match.sport === "Tenis"
+                      ? [{ l: "Mais/Menos 20.5 games", o: +(1.78+(match.odds[0]%0.08)).toFixed(2), u: +(2.02-(match.odds[0]%0.07)).toFixed(2) }, { l: "Mais/Menos 22.5 games", o: +(2.05+(match.odds[1]%0.09)).toFixed(2), u: +(1.75-(match.odds[1]%0.06)).toFixed(2) }, { l: "Mais/Menos 2.5 sets", o: +(1.60+(match.odds[2]%0.08)).toFixed(2), u: +(2.20-(match.odds[2]%0.07)).toFixed(2) }]
+                      : match.sport === "Volei"
+                      ? [{ l: "Mais/Menos 3.5 sets", o: +(1.88+(match.odds[0]%0.07)).toFixed(2), u: +(1.92-(match.odds[0]%0.06)).toFixed(2) }, { l: "Mais/Menos 170.5 pts", o: +(1.80+(match.odds[1]%0.08)).toFixed(2), u: +(2.00-(match.odds[1]%0.07)).toFixed(2) }, { l: "Mais/Menos 180.5 pts", o: +(2.15+(match.odds[2]%0.09)).toFixed(2), u: +(1.65-(match.odds[2]%0.04)).toFixed(2) }]
+                      : [{ l: "Mais/Menos 0.5", o: +(1.12+(match.odds[0]%0.04)).toFixed(2), u: +(5.80-(match.odds[0]%0.3)).toFixed(2) }, { l: "Mais/Menos 1.5", o: +(1.32+(match.odds[0]%0.08)).toFixed(2), u: +(3.20-(match.odds[0]%0.15)).toFixed(2) }, { l: "Mais/Menos 2.5", o: +(1.85+(match.odds[1]%0.07)).toFixed(2), u: +(1.95-(match.odds[1]%0.06)).toFixed(2) }, { l: "Mais/Menos 3.5", o: +(2.75+(match.odds[2]%0.12)).toFixed(2), u: +(1.40+(match.odds[2]%0.04)).toFixed(2) }, { l: "Mais/Menos 4.5", o: +(4.20+(match.odds[0]%0.2)).toFixed(2), u: +(1.18+(match.odds[1]%0.03)).toFixed(2) }];
+                    return (
+                      <div className="space-y-1.5">
+                        {lines.map((m, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <span className="text-[11px] text-foreground flex-1 truncate">{m.l}</span>
+                            <div className="flex gap-1.5">
+                              <div className="w-16 text-center py-1.5 rounded-lg bg-emerald-500/5 border border-emerald-500/15 cursor-pointer hover:bg-emerald-500/10 transition-colors"><span className="text-xs font-bold text-emerald-400 tabular-nums">{m.o}</span></div>
+                              <div className="w-16 text-center py-1.5 rounded-lg bg-destructive/5 border border-destructive/15 cursor-pointer hover:bg-destructive/10 transition-colors"><span className="text-xs font-bold text-destructive tabular-nums">{m.u}</span></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </SectionCard>
+
+                {/* Handicap */}
+                <SectionCard>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-1 h-4 rounded-full bg-blue-500" />
+                    <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Handicap</h3>
+                  </div>
+                  {(() => {
+                    const hcp = match.sport === "Basquete"
+                      ? [{ l: `${match.teamA} -3.5`, o: +(1.90+(match.odds[0]%0.07)).toFixed(2) }, { l: `${match.teamB} +3.5`, o: +(1.90-(match.odds[0]%0.06)).toFixed(2) }, { l: `${match.teamA} -7.5`, o: +(2.25+(match.odds[1]%0.08)).toFixed(2) }, { l: `${match.teamB} +7.5`, o: +(1.62-(match.odds[1]%0.05)).toFixed(2) }]
+                      : match.sport === "Tenis"
+                      ? [{ l: `${match.teamA} -2.5 games`, o: +(1.85+(match.odds[0]%0.06)).toFixed(2) }, { l: `${match.teamB} +2.5 games`, o: +(1.95-(match.odds[0]%0.07)).toFixed(2) }, { l: `${match.teamA} -4.5 games`, o: +(2.30+(match.odds[1]%0.09)).toFixed(2) }, { l: `${match.teamB} +4.5 games`, o: +(1.55-(match.odds[1]%0.04)).toFixed(2) }]
+                      : match.sport === "Volei"
+                      ? [{ l: `${match.teamA} -1.5 sets`, o: +(2.10+(match.odds[0]%0.08)).toFixed(2) }, { l: `${match.teamB} +1.5 sets`, o: +(1.70-(match.odds[0]%0.06)).toFixed(2) }, { l: `${match.teamA} Handicap -4.5`, o: +(1.88+(match.odds[1]%0.07)).toFixed(2) }, { l: `${match.teamB} Handicap +4.5`, o: +(1.92-(match.odds[1]%0.06)).toFixed(2) }]
+                      : [{ l: `${match.teamA} -0.5`, o: +(match.odds[0]).toFixed(2) }, { l: `${match.teamB} +0.5`, o: +(1/(1/match.odds[1]+1/match.odds[2])).toFixed(2) }, { l: `${match.teamA} -1.5`, o: +(match.odds[0]*1.45).toFixed(2) }, { l: `${match.teamB} +1.5`, o: +(1/(1/(match.odds[0]*1.45))*0.52).toFixed(2) }];
+                    return (
+                      <div className="space-y-1.5">
+                        {hcp.map((m, i) => (
+                          <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-blue-500/5 border border-blue-500/10 cursor-pointer hover:bg-blue-500/10 transition-colors">
+                            <span className="text-[11px] text-foreground font-medium">{m.l}</span>
+                            <span className="text-sm font-bold text-blue-400 tabular-nums">{m.o}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </SectionCard>
+
+                {/* Escanteios (Futebol only) */}
+                {(!match.sport || match.sport === "Futebol") && (
+                  <SectionCard>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-1 h-4 rounded-full bg-violet-500" />
+                      <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Escanteios</h3>
+                    </div>
+                    <div className="space-y-1.5">
+                      {[
+                        { l: "Mais/Menos 8.5", o: +(1.75+(match.odds[0]%0.07)).toFixed(2), u: +(2.05-(match.odds[0]%0.06)).toFixed(2) },
+                        { l: "Mais/Menos 9.5", o: +(1.90+(match.odds[1]%0.08)).toFixed(2), u: +(1.90-(match.odds[1]%0.07)).toFixed(2) },
+                        { l: "Mais/Menos 10.5", o: +(2.15+(match.odds[2]%0.09)).toFixed(2), u: +(1.68-(match.odds[2]%0.05)).toFixed(2) },
+                        { l: "Mais/Menos 11.5", o: +(2.50+(match.odds[0]%0.12)).toFixed(2), u: +(1.50+(match.odds[1]%0.04)).toFixed(2) },
+                      ].map((m, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <span className="text-[11px] text-foreground flex-1 truncate">{m.l}</span>
+                          <div className="flex gap-1.5">
+                            <div className="w-16 text-center py-1.5 rounded-lg bg-violet-500/5 border border-violet-500/15 cursor-pointer hover:bg-violet-500/10 transition-colors"><span className="text-xs font-bold text-violet-400 tabular-nums">{m.o}</span></div>
+                            <div className="w-16 text-center py-1.5 rounded-lg bg-violet-500/5 border border-violet-500/15 cursor-pointer hover:bg-violet-500/10 transition-colors"><span className="text-xs font-bold text-violet-400 tabular-nums">{m.u}</span></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </SectionCard>
+                )}
+
+                {/* Cartoes (Futebol only) */}
+                {(!match.sport || match.sport === "Futebol") && (
+                  <SectionCard>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-1 h-4 rounded-full bg-yellow-500" />
+                      <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Cartoes</h3>
+                    </div>
+                    <div className="space-y-1.5">
+                      {[
+                        { l: "Mais/Menos 3.5", o: +(1.70+(match.odds[0]%0.06)).toFixed(2), u: +(2.10-(match.odds[0]%0.07)).toFixed(2) },
+                        { l: "Mais/Menos 4.5", o: +(1.90+(match.odds[1]%0.07)).toFixed(2), u: +(1.90-(match.odds[1]%0.06)).toFixed(2) },
+                        { l: "Mais/Menos 5.5", o: +(2.25+(match.odds[2]%0.09)).toFixed(2), u: +(1.60-(match.odds[2]%0.04)).toFixed(2) },
+                      ].map((m, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <span className="text-[11px] text-foreground flex-1 truncate">{m.l}</span>
+                          <div className="flex gap-1.5">
+                            <div className="w-16 text-center py-1.5 rounded-lg bg-yellow-500/5 border border-yellow-500/15 cursor-pointer hover:bg-yellow-500/10 transition-colors"><span className="text-xs font-bold text-yellow-400 tabular-nums">{m.o}</span></div>
+                            <div className="w-16 text-center py-1.5 rounded-lg bg-yellow-500/5 border border-yellow-500/15 cursor-pointer hover:bg-yellow-500/10 transition-colors"><span className="text-xs font-bold text-yellow-400 tabular-nums">{m.u}</span></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </SectionCard>
+                )}
+
+                {/* Quartos (Basquete only) */}
+                {match.sport === "Basquete" && (
+                  <SectionCard>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-1 h-4 rounded-full bg-orange-500" />
+                      <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Quartos</h3>
+                    </div>
+                    <div className="space-y-1.5">
+                      {[
+                        { l: `${match.teamA} vence 1Q`, o: +(1.75+(match.odds[0]%0.12)).toFixed(2) },
+                        { l: `${match.teamB} vence 1Q`, o: +(2.05+(match.odds[2]%0.08)).toFixed(2) },
+                        { l: "Empate 1Q", o: +(6.50+(match.odds[1]%0.3)).toFixed(2) },
+                        { l: `${match.teamA} vence 1T`, o: +(1.65+(match.odds[0]%0.1)).toFixed(2) },
+                        { l: `${match.teamB} vence 1T`, o: +(2.15+(match.odds[2]%0.1)).toFixed(2) },
+                      ].map((m, i) => (
+                        <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-orange-500/5 border border-orange-500/10 cursor-pointer hover:bg-orange-500/10 transition-colors">
+                          <span className="text-[11px] text-foreground font-medium">{m.l}</span>
+                          <span className="text-sm font-bold text-orange-400 tabular-nums">{m.o}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </SectionCard>
+                )}
+              </div>
+            </RevealSection>
+
+            {/* Mercados Especiais */}
+            <RevealSection delay={60}>
+              <SectionCard>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-1 h-4 rounded-full bg-primary" />
+                  <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Mercados Especiais</h3>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {(() => {
+                    const sp = match.sport === "Basquete"
+                      ? [{ l: "Par", o: +(1.90+(match.odds[0]%0.04)).toFixed(2) }, { l: "Impar", o: +(1.90-(match.odds[0]%0.04)).toFixed(2) }, { l: `${match.teamA} +10.5`, o: +(1.35+(match.odds[0]%0.05)).toFixed(2) }, { l: `${match.teamB} +10.5`, o: +(1.45+(match.odds[2]%0.06)).toFixed(2) }, { l: "Overtime", o: +(8.00+(match.odds[1]%0.5)).toFixed(2) }, { l: "Margem 1-5 pts", o: +(3.80+(match.odds[1]%0.15)).toFixed(2) }]
+                      : match.sport === "Tenis"
+                      ? [{ l: `${match.teamA} 2-0`, o: +(2.10+(match.odds[0]%0.15)).toFixed(2) }, { l: `${match.teamA} 2-1`, o: +(3.20+(match.odds[0]%0.12)).toFixed(2) }, { l: `${match.teamB} 2-0`, o: +(2.80+(match.odds[2]%0.15)).toFixed(2) }, { l: `${match.teamB} 2-1`, o: +(3.50+(match.odds[2]%0.12)).toFixed(2) }, { l: "Tie-break", o: +(1.70+(match.odds[1]%0.08)).toFixed(2) }, { l: "Sem tie-break", o: +(2.10-(match.odds[1]%0.07)).toFixed(2) }]
+                      : match.sport === "Volei"
+                      ? [{ l: `${match.teamA} 3-0`, o: +(3.50+(match.odds[0]%0.15)).toFixed(2) }, { l: `${match.teamA} 3-1`, o: +(3.20+(match.odds[0]%0.12)).toFixed(2) }, { l: `${match.teamA} 3-2`, o: +(4.50+(match.odds[0]%0.18)).toFixed(2) }, { l: `${match.teamB} 3-0`, o: +(4.00+(match.odds[2]%0.15)).toFixed(2) }, { l: `${match.teamB} 3-1`, o: +(3.80+(match.odds[2]%0.12)).toFixed(2) }, { l: `${match.teamB} 3-2`, o: +(5.00+(match.odds[2]%0.18)).toFixed(2) }]
+                      : [{ l: "Ambas Marcam Sim", o: +(1.75+(match.odds[0]%0.07)).toFixed(2) }, { l: "Ambas Marcam Nao", o: +(2.00-(match.odds[0]%0.06)).toFixed(2) }, { l: "Dupla Chance 1X", o: +(1.18+(match.odds[0]%0.04)).toFixed(2) }, { l: "Dupla Chance 12", o: +(1.22+(match.odds[1]%0.04)).toFixed(2) }, { l: "Dupla Chance X2", o: +(1.30+(match.odds[2]%0.05)).toFixed(2) }, { l: `1o Gol ${match.teamA}`, o: +(1.70+(match.odds[0]%0.1)).toFixed(2) }, { l: `1o Gol ${match.teamB}`, o: +(2.10+(match.odds[2]%0.08)).toFixed(2) }, { l: "Sem Gols", o: +(6.00+(match.odds[1]%0.4)).toFixed(2) }, { l: `${match.teamA} Vence 1T`, o: +(2.30+(match.odds[0]%0.12)).toFixed(2) }, { l: "Empate 1T", o: +(1.85+(match.odds[1]%0.08)).toFixed(2) }, { l: `${match.teamB} Vence 1T`, o: +(3.10+(match.odds[2]%0.15)).toFixed(2) }, { l: "Gol no 1T", o: +(1.40+(match.odds[0]%0.05)).toFixed(2) }];
+                    return sp.map((m, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-secondary/20 border border-border/20 cursor-pointer hover:border-primary/20 hover:bg-primary/5 transition-all group">
+                        <span className="text-[11px] text-foreground group-hover:text-primary transition-colors">{m.l}</span>
+                        <span className="text-sm font-bold text-primary tabular-nums">{m.o}</span>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </SectionCard>
+            </RevealSection>
+
+            {/* Resultado Exato (Futebol only) */}
+            {(!match.sport || match.sport === "Futebol") && (
+              <RevealSection delay={80}>
+                <SectionCard>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-1 h-4 rounded-full bg-cyan-500" />
+                    <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Resultado Exato</h3>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-2">{match.teamA}</p>
+                      <div className="space-y-1.5">
+                        {[{ s: "1-0", o: +(6.50+(match.odds[0]%0.4)).toFixed(2) }, { s: "2-0", o: +(9.00+(match.odds[0]%0.5)).toFixed(2) }, { s: "2-1", o: +(7.50+(match.odds[0]%0.35)).toFixed(2) }, { s: "3-0", o: +(16.00+(match.odds[0]%0.8)).toFixed(2) }, { s: "3-1", o: +(12.00+(match.odds[0]%0.6)).toFixed(2) }].map((r, i) => (
+                          <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-secondary/20 border border-border/15 cursor-pointer hover:border-primary/20 hover:bg-primary/5 transition-all">
+                            <span className="text-xs text-foreground font-medium tabular-nums">{r.s}</span>
+                            <span className="text-xs font-bold text-primary tabular-nums">{r.o}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Empate</p>
+                      <div className="space-y-1.5">
+                        {[{ s: "0-0", o: +(8.00+(match.odds[1]%0.5)).toFixed(2) }, { s: "1-1", o: +(5.50+(match.odds[1]%0.3)).toFixed(2) }, { s: "2-2", o: +(12.00+(match.odds[1]%0.6)).toFixed(2) }, { s: "3-3", o: +(35.00+(match.odds[1]%1.5)).toFixed(2) }].map((r, i) => (
+                          <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-secondary/20 border border-border/15 cursor-pointer hover:border-primary/20 hover:bg-primary/5 transition-all">
+                            <span className="text-xs text-foreground font-medium tabular-nums">{r.s}</span>
+                            <span className="text-xs font-bold text-foreground tabular-nums">{r.o}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-wider mb-2">{match.teamB}</p>
+                      <div className="space-y-1.5">
+                        {[{ s: "0-1", o: +(7.00+(match.odds[2]%0.4)).toFixed(2) }, { s: "0-2", o: +(10.00+(match.odds[2]%0.5)).toFixed(2) }, { s: "1-2", o: +(8.50+(match.odds[2]%0.4)).toFixed(2) }, { s: "0-3", o: +(18.00+(match.odds[2]%0.8)).toFixed(2) }, { s: "1-3", o: +(14.00+(match.odds[2]%0.7)).toFixed(2) }].map((r, i) => (
+                          <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-secondary/20 border border-border/15 cursor-pointer hover:border-primary/20 hover:bg-primary/5 transition-all">
+                            <span className="text-xs text-foreground font-medium tabular-nums">{r.s}</span>
+                            <span className="text-xs font-bold text-foreground/70 tabular-nums">{r.o}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </SectionCard>
+              </RevealSection>
+            )}
+
+            {/* Odds movement mini */}
+            <RevealSection delay={(!match.sport || match.sport === "Futebol") ? 100 : 80}>
+              <SectionCard>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1 h-4 rounded-full bg-primary" />
+                    <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Movimentacao</h3>
+                  </div>
+                  <span className="text-[9px] text-muted-foreground">Ultimas 12h</span>
+                </div>
+                <div className="h-[160px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={oddsMovement} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                      <defs>
+                        <linearGradient id="oddsHome" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.15} /><stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} /></linearGradient>
+                        <linearGradient id="oddsAway" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f97316" stopOpacity={0.15} /><stop offset="95%" stopColor="#f97316" stopOpacity={0} /></linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.1)" />
+                      <XAxis dataKey="time" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} domain={["auto", "auto"]} />
+                      <RechartsTooltip content={<CustomTooltip />} />
+                      <Area type="monotone" dataKey="home" stroke="hsl(var(--primary))" fill="url(#oddsHome)" strokeWidth={2} name={match.teamA} />
+                      <Area type="monotone" dataKey="away" stroke="#f97316" fill="url(#oddsAway)" strokeWidth={2} name={match.teamB} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex justify-center gap-5 mt-1">
+                  <span className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground"><span className="w-2 h-2 rounded-full bg-primary" />{match.teamA}</span>
+                  <span className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground"><span className="w-2 h-2 rounded-full bg-orange-500" />{match.teamB}</span>
+                </div>
+              </SectionCard>
+            </RevealSection>
+          </div>
+        )}
+
+        {/* ====== TAB: JOGADORES ====== */}
+        {activeTab === "jogadores" && (
+          <div className="space-y-5">
+            <RevealSection>
+              <div className="flex gap-1.5 p-1 rounded-xl bg-secondary/40">
+                <button onClick={() => setSelectedTeam("home")} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${selectedTeam === "home" ? "bg-card text-foreground shadow-sm border border-border/50" : "text-muted-foreground hover:text-foreground"}`}>{match.teamA}</button>
+                <button onClick={() => setSelectedTeam("away")} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${selectedTeam === "away" ? "bg-card text-foreground shadow-sm border border-border/50" : "text-muted-foreground hover:text-foreground"}`}>{match.teamB}</button>
+              </div>
+            </RevealSection>
+            {(() => {
+              const lineup = selectedTeam === "home" ? details.homeLineup : details.awayLineup;
+              const allPlayers = [...lineup.players, ...lineup.substitutes];
+              const topRated = [...allPlayers].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating)).slice(0, 3);
+              const byPosition: Record<string, Player[]> = {};
+              allPlayers.forEach(p => {
+                const pos = p.position || "Outros";
+                if (!byPosition[pos]) byPosition[pos] = [];
+                byPosition[pos].push(p);
+              });
+              const posOrder = ["Goleiro", "Zagueiro", "Lateral", "Volante", "Meia", "Atacante", "Armador", "Ala", "Pivo"];
+              const sortedPositions = Object.keys(byPosition).sort((a, b) => {
+                const ai = posOrder.indexOf(a);
+                const bi = posOrder.indexOf(b);
+                return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+              });
+              return (
+                <div className="space-y-5">
+                  {/* Top 3 highlight */}
+                  <RevealSection delay={20}>
+                    <div className="grid grid-cols-3 gap-3">
+                      {topRated.map((p, i) => {
+                        const ratingVal = parseFloat(p.rating);
+                        const ratingColor = ratingVal >= 7.5 ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" : ratingVal >= 6.5 ? "text-amber-400 bg-amber-500/10 border-amber-500/20" : "text-red-400 bg-red-500/10 border-red-500/20";
+                        const rankColors = ["bg-amber-500", "bg-slate-400", "bg-amber-700"];
+                        return (
+                          <SectionCard key={i}>
+                            <div className="text-center py-2">
+                              <div className={`w-7 h-7 rounded-full mx-auto flex items-center justify-center text-[10px] font-black text-white mb-2 ${rankColors[i]}`}>{i + 1}</div>
+                              <div className="w-14 h-14 rounded-full mx-auto flex items-center justify-center text-lg font-bold bg-primary text-primary-foreground mb-2">{p.number}</div>
+                              <p className="text-xs font-bold text-foreground truncate">{p.name}</p>
+                              <p className="text-[10px] text-muted-foreground mb-2">{p.position}</p>
+                              <span className={`inline-block text-sm font-black tabular-nums px-3 py-1 rounded-lg border ${ratingColor}`}>{p.rating}</span>
+                            </div>
+                          </SectionCard>
+                        );
+                      })}
+                    </div>
+                  </RevealSection>
+
+                  {/* Squad by position */}
+                  {sortedPositions.map((pos, gi) => (
+                    <RevealSection key={pos} delay={40 + gi * 20}>
+                      <SectionCard>
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-1 h-4 rounded-full bg-primary" />
+                          <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">{pos === "Goleiro" ? "Goleiros" : pos === "Zagueiro" ? "Zagueiros" : pos === "Lateral" ? "Laterais" : pos === "Volante" ? "Volantes" : pos === "Meia" ? "Meias" : pos === "Atacante" ? "Atacantes" : pos + "s"}</h3>
+                          <span className="text-[10px] text-muted-foreground">{byPosition[pos].length}</span>
+                        </div>
+                        <div className="space-y-1">
+                          {byPosition[pos].sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating)).map((p, i) => {
+                            const ratingVal = parseFloat(p.rating);
+                            const ratingColor = ratingVal >= 7.5 ? "text-emerald-400 bg-emerald-500/10" : ratingVal >= 6.5 ? "text-amber-400 bg-amber-500/10" : "text-red-400 bg-red-500/10";
+                            const isTitular = lineup.players.some(lp => lp.number === p.number && lp.name === p.name);
+                            return (
+                              <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-secondary/30 transition-colors group">
+                                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${isTitular ? "bg-primary text-primary-foreground" : "bg-secondary/60 text-muted-foreground"}`}>{p.number}</div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
+                                    {isTitular && <span className="text-[8px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">TIT</span>}
+                                  </div>
+                                  <p className="text-[10px] text-muted-foreground">{p.age ? `${p.age} anos` : ""}{p.age && p.position ? " - " : ""}{p.position}</p>
+                                </div>
+                                <span className={`text-xs font-black tabular-nums px-2 py-0.5 rounded-md ${ratingColor}`}>{p.rating}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </SectionCard>
+                    </RevealSection>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        )}
