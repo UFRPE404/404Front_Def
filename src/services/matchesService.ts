@@ -136,15 +136,20 @@ function isVirtualMatch(game: any): boolean {
  * Service layer for matches data.
  */
 
-export async function getAllMatches(): Promise<MatchData[]> {
+export async function getAllMatchesWithStatus(): Promise<{ matches: MatchData[]; cacheComplete: boolean }> {
   try {
     const response = await axios.get(`${API_BASE_URL}/api/matches/upcoming-with-odds`);
-    const raw: any[] = response.data;
-    return raw.map(mapEnrichedToMatchData);
+    const { matches: raw, cacheComplete } = response.data as { matches: any[]; cacheComplete: boolean };
+    return { matches: raw.map(mapEnrichedToMatchData), cacheComplete: !!cacheComplete };
   } catch (error) {
     console.error("Erro ao buscar partidas:", error);
-    return [];
+    return { matches: [], cacheComplete: false };
   }
+}
+
+export async function getAllMatches(): Promise<MatchData[]> {
+  const { matches } = await getAllMatchesWithStatus();
+  return matches;
 }
 
 export async function getCarouselMatches(): Promise<MatchData[]> {

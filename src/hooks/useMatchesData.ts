@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MatchData } from "@/data/matches";
 import * as matchesService from "@/services/matchesService";
 import { getFeaturedMatchIds } from "@/services/suggestedBetsService";
@@ -18,26 +18,37 @@ export function useMatches(): UseMatchesResult {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
+  const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const poll = useCallback((attempt: number, prevCount: number) => {
+    matchesService.getAllMatchesWithStatus().then(({ matches: fresh, cacheComplete }) => {
+      if (fresh.length > prevCount) setMatches(fresh);
+      // Continua polling se o cache ainda não está completo (máx ~60s)
+      if (!cacheComplete && attempt < 30) {
+        pollRef.current = setTimeout(() => poll(attempt + 1, fresh.length || prevCount), 2_000);
+      }
+    }).catch(() => {});
+  }, []);
+
   useEffect(() => {
     setLoading(true);
     setError(null);
     matchesService
-      .getAllMatches()
-      .then((data) => {
+      .getAllMatchesWithStatus()
+      .then(({ matches: data, cacheComplete }) => {
         setMatches(data);
-        // Re-busca após 8s para pegar cache completo da semana (background)
-        setTimeout(() => {
-          matchesService
-            .getAllMatches()
-            .then((fresh) => {
-              if (fresh.length > data.length) setMatches(fresh);
-            })
-            .catch(() => {}); // silencioso
-        }, 8_000);
+        // Se o cache não está completo, inicia polling a cada 2s
+        if (!cacheComplete) {
+          pollRef.current = setTimeout(() => poll(1, data.length), 2_000);
+        }
       })
       .catch(setError)
       .finally(() => setLoading(false));
-  }, []);
+
+    return () => {
+      if (pollRef.current) clearTimeout(pollRef.current);
+    };
+  }, [poll]);
 
   return { matches, loading, error };
 }
