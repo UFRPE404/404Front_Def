@@ -1,13 +1,14 @@
 import { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import SuggestedBetCard from "./SuggestedBetCard";
-import { useDreamBets, useBestOfDayBets } from "@/hooks/useSuggestedBets";
+import { useAllSuggestedBets, useUpcomingBets } from "@/hooks/useSuggestedBets";
+import { SuggestedBet } from "@/data/matches";
 
 const SuggestedBets = () => {
-  const { bets: dreamBets } = useDreamBets();
-  const { bets: bestOfDayBets } = useBestOfDayBets();
-  const dreamScrollRef = useRef<HTMLDivElement>(null);
-  const bestScrollRef = useRef<HTMLDivElement>(null);
+  const { bets, loading } = useAllSuggestedBets();
+  const { bets: upcomingBets, loading: upcomingLoading } = useUpcomingBets();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const upcomingScrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (ref: React.RefObject<HTMLDivElement>, dir: "left" | "right") => {
     if (!ref.current) return;
@@ -26,7 +27,7 @@ const SuggestedBets = () => {
   }: {
     title: string;
     description: string;
-    bets: typeof dreamBets;
+    bets: SuggestedBet[];
     scrollRef: React.RefObject<HTMLDivElement>;
     theme: "dream" | "best";
   }) => (
@@ -78,20 +79,41 @@ const SuggestedBets = () => {
 
   return (
     <div className="space-y-8">
-      <CarouselSection
-        title="💰 Para Sonhar"
-        description="Apostas com odds altas para aquele sonho grande"
-        bets={dreamBets}
-        scrollRef={dreamScrollRef}
-        theme="dream"
-      />
-      <CarouselSection
-        title="⭐ Melhores do Dia"
-        description="Nossas principais picks para hoje"
-        bets={bestOfDayBets}
-        scrollRef={bestScrollRef}
-        theme="best"
-      />
+      {loading ? (
+        <section className="px-4 mt-8">
+          <h2 className="text-lg font-bold text-foreground mb-2">🤖 Sugestões de Apostas</h2>
+          <p className="text-sm text-muted-foreground">Analisando partidas ao vivo...</p>
+        </section>
+      ) : bets.length > 0 ? (
+        <CarouselSection
+          title="🤖 Sugestões de Apostas"
+          description="Palpites gerados por Machine Learning com base nas partidas ao vivo"
+          bets={bets}
+          scrollRef={scrollRef}
+          theme="best"
+        />
+      ) : (
+        <section className="px-4 mt-8">
+          <h2 className="text-lg font-bold text-foreground mb-2">Sugestões de Apostas</h2>
+          <p className="text-sm text-muted-foreground">Nenhuma sugestão disponível no momento.</p>
+        </section>
+      )}
+
+      {/* Partidas Próximas */}
+      {upcomingLoading ? (
+        <section className="px-4 mt-8">
+          <h2 className="text-lg font-bold text-foreground mb-2">📅 Partidas Próximas</h2>
+          <p className="text-sm text-muted-foreground">Buscando partidas próximas e analisando com IA...</p>
+        </section>
+      ) : upcomingBets.length > 0 ? (
+        <CarouselSection
+          title="📅 Partidas Próximas"
+          description="Análises de IA para as próximas partidas com odds disponíveis"
+          bets={upcomingBets}
+          scrollRef={upcomingScrollRef}
+          theme="dream"
+        />
+      ) : null}
     </div>
   );
 };

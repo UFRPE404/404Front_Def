@@ -70,3 +70,24 @@ export function useAllSuggestedBets(): UseSuggestedBetsResult {
 
   return { bets, loading, error };
 }
+
+/**
+ * Hook to fetch upcoming matches with ML predictions
+ */
+export function useUpcomingBets(): UseSuggestedBetsResult {
+  const [bets, setBets] = useState<SuggestedBet[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    suggestedBetsService
+      .getUpcomingBets()
+      .then(setBets)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, []);
+
+  return { bets, loading, error };
+}
