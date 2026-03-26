@@ -3,10 +3,11 @@ import { useLiveMatches } from "@/hooks/useMatchesData";
 
 const LiveMatches = () => {
   const { matches: liveMatches } = useLiveMatches();
+  const displayMatches = liveMatches.slice(0, 8);
   return (
     <section className="px-4 mt-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        {liveMatches.map((match, i) => (
+        {displayMatches.map((match, i) => (
           <div
             key={i}
             className="animate-in fade-in slide-in-from-bottom-3"

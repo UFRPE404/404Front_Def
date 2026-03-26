@@ -1,6 +1,4 @@
-import { useEffect, useState } from "react";
-import { SuggestedBet } from "@/data/matches";
-import * as suggestedBetsService from "@/services/suggestedBetsService";
+import { SuggestedBet, dreamBets as mockDreamBets, bestOfDayBets as mockBestOfDay } from "@/data/matches";
 
 export interface UseSuggestedBetsResult {
   bets: SuggestedBet[];
@@ -9,64 +7,23 @@ export interface UseSuggestedBetsResult {
 }
 
 /**
- * Hook to fetch dream bets
+ * Hook to fetch dream bets (mock data)
  */
 export function useDreamBets(): UseSuggestedBetsResult {
-  const [bets, setBets] = useState<SuggestedBet[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    suggestedBetsService
-      .getDreamBets()
-      .then(setBets)
-      .catch(setError)
-      .finally(() => setLoading(false));
-  }, []);
-
-  return { bets, loading, error };
+  return { bets: mockDreamBets, loading: false, error: null };
 }
 
 /**
- * Hook to fetch best of day bets
+ * Hook to fetch best of day bets (mock data)
  */
 export function useBestOfDayBets(): UseSuggestedBetsResult {
-  const [bets, setBets] = useState<SuggestedBet[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    suggestedBetsService
-      .getBestOfDayBets()
-      .then(setBets)
-      .catch(setError)
-      .finally(() => setLoading(false));
-  }, []);
-
-  return { bets, loading, error };
+  return { bets: mockBestOfDay, loading: false, error: null };
 }
 
 /**
- * Hook to fetch all suggested bets
+ * Hook to fetch all suggested bets (mock data)
  */
 export function useAllSuggestedBets(): UseSuggestedBetsResult {
-  const [bets, setBets] = useState<SuggestedBet[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    suggestedBetsService
-      .getAllSuggestedBets()
-      .then(setBets)
-      .catch(setError)
-      .finally(() => setLoading(false));
-  }, []);
-
-  return { bets, loading, error };
+  const allBets = [...mockDreamBets, ...mockBestOfDay];
+  return { bets: allBets, loading: false, error: null };
 }

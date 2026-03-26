@@ -1,15 +1,8 @@
 import axios from 'axios'
 import type { MatchData, MatchStatistics, MatchEvent, MatchLineup, H2HRecord } from "@/data/matches";
-import { apiRequest } from "@/config/api";
-import {
-  allMatches,
-  carouselMatches,
-  featuredMatches,
-  liveMatches,
-  volleyballMatches,
-} from "@/data/matches";
+import { apiRequest, API_CONFIG } from "@/config/api";
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = API_CONFIG.baseUrl.replace(/\/api$/, '');
 
 const SPORT_ID_MAP: Record<string, string> = {
   "1": "Futebol",
@@ -44,26 +37,141 @@ function mapApiMatchToMatchData(raw: any): MatchData {
   };
 }
 
+/** Mapeia um item cru de upcoming da API para MatchData */
+function mapUpcomingToMatchData(raw: any): MatchData {
+  const sportName = SPORT_ID_MAP[raw.sport_id] ?? "Futebol";
+  const matchDate = raw.time ? new Date(Number(raw.time) * 1000) : new Date();
+
+  // Calcula diff de dias usando timezone GMT-3
+  const now = new Date();
+  const nowStr = now.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const matchStr = matchDate.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const nowDay = new Date(nowStr);
+  const matchDay = new Date(matchStr);
+  const diffDays = Math.round((matchDay.getTime() - nowDay.getTime()) / (1000 * 60 * 60 * 24));
+
+  let dateLabel: string;
+  if (diffDays <= 0) dateLabel = "Hoje";
+  else if (diffDays === 1) dateLabel = "Amanhã";
+  else dateLabel = matchDate.toLocaleDateString("pt-BR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "America/Sao_Paulo",
+  }).replace(".", "");
+
+  const timeStr = matchDate.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  });
+
+  return {
+    id: String(raw.id),
+    league: raw.league?.name ?? "Liga desconhecida",
+    time: timeStr,
+    live: false,
+    teamA: raw.home?.name ?? "Time A",
+    teamB: raw.away?.name ?? "Time B",
+    odds: [1.50, 3.50, 4.00],
+    sport: sportName,
+    date: dateLabel,
+  };
+}
+
+/** Mapeia dados enriquecidos do /upcoming-with-odds para MatchData (com odds reais) */
+function mapEnrichedToMatchData(raw: any): MatchData {
+  const sportName = SPORT_ID_MAP[raw.sport_id] ?? "Futebol";
+  const matchDate = raw.time ? new Date(Number(raw.time) * 1000) : new Date();
+
+  // Calcula diff de dias usando timezone GMT-3
+  const now = new Date();
+  const nowStr = now.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const matchStr = matchDate.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const nowDay = new Date(nowStr);
+  const matchDay = new Date(matchStr);
+  const diffDays = Math.round((matchDay.getTime() - nowDay.getTime()) / (1000 * 60 * 60 * 24));
+
+  let dateLabel: string;
+  if (diffDays <= 0) dateLabel = "Hoje";
+  else if (diffDays === 1) dateLabel = "Amanhã";
+  else dateLabel = matchDate.toLocaleDateString("pt-BR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "America/Sao_Paulo",
+  }).replace(".", "");
+
+  const timeStr = matchDate.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  });
+
+  return {
+    id: String(raw.id),
+    league: raw.league ?? "Liga desconhecida",
+    time: timeStr,
+    live: false,
+    teamA: raw.home ?? "Time A",
+    teamB: raw.away ?? "Time B",
+    odds: raw.simpleOdds ?? [1.50, 3.50, 4.00],
+    sport: sportName,
+    date: dateLabel,
+  };
+}
+
+// Filtro de partidas virtuais (mesmo do backend)
+const VIRTUAL_KEYWORDS = [
+  "esports", "virtual", "cyber", "simulated", "srl", "e-football", "efootball",
+  "esoccer", "e-soccer", "gaming", "gt leagues"
+];
+
+function isVirtualMatch(game: any): boolean {
+  const leagueName = (game.league?.name || "").toLowerCase();
+  return VIRTUAL_KEYWORDS.some((kw) => leagueName.includes(kw));
+}
+
 /**
  * Service layer for matches data.
  */
 
 export async function getAllMatches(): Promise<MatchData[]> {
-  // TODO: Replace with actual API call
-  // return fetch(`${API_BASE_URL}/matches`).then(r => r.json());
-  return Promise.resolve(allMatches);
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/matches/upcoming-with-odds`);
+    const raw: any[] = response.data;
+    return raw.map(mapEnrichedToMatchData);
+  } catch (error) {
+    console.error("Erro ao buscar partidas:", error);
+    return [];
+  }
 }
 
 export async function getCarouselMatches(): Promise<MatchData[]> {
-  // TODO: Replace with actual API call
-  // return fetch(`${API_BASE_URL}/matches/carousel`).then(r => r.json());
-  return Promise.resolve(carouselMatches);
+  const all = await getAllMatches();
+  return all.slice(0, 12);
 }
 
 export async function getFeaturedMatches(): Promise<MatchData[]> {
-  // TODO: Replace with actual API call
-  // return fetch(`${API_BASE_URL}/matches/featured`).then(r => r.json());
-  return Promise.resolve(featuredMatches);
+  try {
+    const { getFeaturedMatchIds } = await import("./suggestedBetsService");
+    const [all, featuredIds] = await Promise.all([
+      getAllMatches(),
+      getFeaturedMatchIds(),
+    ]);
+    if (featuredIds.length > 0) {
+      const matchMap = new Map(all.map(m => [m.id, m]));
+      const featured = featuredIds
+        .map(id => matchMap.get(id))
+        .filter(Boolean) as MatchData[];
+      if (featured.length > 0) return featured.slice(0, 6);
+    }
+    // fallback: primeiros 6
+    return all.slice(0, 6);
+  } catch {
+    const all = await getAllMatches();
+    return all.slice(0, 6);
+  }
 }
 
 export async function getLiveMatches(): Promise<MatchData[]> {
@@ -119,32 +227,132 @@ export async function getUniqueLeaguesBySport(sport: string): Promise<string[]> 
   return Array.from(leagues).sort();
 }
 
-// ─── Extended endpoints (return empty data until backend is wired) ──
+// ─── Extended endpoints (wired to backend) ──
 
 export async function getMatchById(id: string): Promise<MatchData | undefined> {
-  // return apiRequest<MatchData>(`/matches/${id}`);
   // Search pre-match first, then live — they are kept in separate endpoints.
   const preMatch = (await getAllMatches()).find((m) => m.id === id);
   if (preMatch) return preMatch;
   return (await getLiveMatches()).find((m) => m.id === id);
 }
 
+export async function getMatchOdds(eventId: string): Promise<{ simpleOdds: [number, number, number] | null; odds: any }> {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/match/${eventId}/odds`, { timeout: 8000 });
+    return response.data;
+  } catch {
+    return { simpleOdds: null, odds: null };
+  }
+}
+
+export async function getUpcomingMatchesWithOdds(): Promise<any[]> {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/matches/upcoming-with-odds`);
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao buscar partidas com odds:", error);
+    return [];
+  }
+}
+
+export async function getEndedMatches(): Promise<any[]> {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/ended`);
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao buscar partidas encerradas:", error);
+    return [];
+  }
+}
+
+export async function getMatchLineups(matchId: string): Promise<any | null> {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/match/${matchId}/lineup`);
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao buscar lineup:", error);
+    return null;
+  }
+}
+
+export async function getTeamHistory(teamId: string, page = 1): Promise<any[]> {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/team/${teamId}/history`, {
+      params: { page },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao buscar histórico do time:", error);
+    return [];
+  }
+}
+
+export async function getPlayerAnalysis(playerId: string, context?: {
+  isDerby?: boolean;
+  isHome?: boolean;
+  isOffensivePlayer?: boolean;
+  isDefensiveOpponent?: boolean;
+  expectedMinutes?: number;
+}): Promise<any | null> {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/player/${playerId}/analysis`, {
+      params: context,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao buscar análise do jogador:", error);
+    return null;
+  }
+}
+
+export async function getPlayerRecommendation(playerId: string, context?: {
+  isDerby?: boolean;
+  isHome?: boolean;
+  isOffensivePlayer?: boolean;
+  isDefensiveOpponent?: boolean;
+  expectedMinutes?: number;
+}): Promise<any | null> {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/player/${playerId}/recommendation`, {
+      params: context,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao buscar recomendação:", error);
+    return null;
+  }
+}
+
+export async function getPlayerConditionalAnalysis(playerId: string, body: {
+  isDerby?: boolean;
+  isHome?: boolean;
+  isOffensivePlayer?: boolean;
+  isDefensiveOpponent?: boolean;
+  expectedMinutes?: number;
+  match: {
+    minute: number;
+    scoreDiff: number;
+    possession: number;
+    dangerousAttacks: number;
+  };
+}): Promise<any | null> {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/api/player/${playerId}/analysis/conditional`, body);
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao buscar análise condicional:", error);
+    return null;
+  }
+}
+
 export async function getMatchStatistics(matchId: string): Promise<MatchStatistics | null> {
-  // return apiRequest<MatchStatistics>(`/matches/${matchId}/statistics`);
   return Promise.resolve(null);
 }
 
 export async function getMatchEvents(matchId: string): Promise<MatchEvent[]> {
-  // return apiRequest<MatchEvent[]>(`/matches/${matchId}/events`);
   return Promise.resolve([]);
 }
 
-export async function getMatchLineups(matchId: string): Promise<MatchLineup | null> {
-  // return apiRequest<MatchLineup>(`/matches/${matchId}/lineups`);
-  return Promise.resolve(null);
-}
-
 export async function getMatchH2H(matchId: string): Promise<H2HRecord[]> {
-  // return apiRequest<H2HRecord[]>(`/matches/${matchId}/h2h`);
   return Promise.resolve([]);
 }

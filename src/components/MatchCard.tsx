@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { generateMatchAnalysis } from "@/utils/matchAnalysis";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { getMatchOdds } from "@/services/matchesService";
 
 interface MatchProps {
   id: string;
@@ -219,9 +220,38 @@ const MatchCard = ({
   id, league, time, live, teamA, teamB, scoreA, scoreB, 
   cornersA = 0, cornersB = 0, 
   cardsA = { yellow: 0, red: 0 }, cardsB = { yellow: 0, red: 0 }, 
-  odds, sport, period, date
+  odds: initialOdds, sport, period, date
 }: MatchProps) => {
   const navigate = useNavigate();
+
+  // Progressive odds loading: fetch real odds when card becomes visible
+  const [realOdds, setRealOdds] = useState<[number, number, number] | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const oddsFetched = useRef(false);
+
+  const isPlaceholderOdds = initialOdds[0] === 1.50 && initialOdds[1] === 3.50 && initialOdds[2] === 4.00;
+
+  useEffect(() => {
+    if (!isPlaceholderOdds || live || oddsFetched.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !oddsFetched.current) {
+          oddsFetched.current = true;
+          observer.disconnect();
+          getMatchOdds(id).then(({ simpleOdds }) => {
+            if (simpleOdds) setRealOdds(simpleOdds);
+          });
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    if (cardRef.current) observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, [id, isPlaceholderOdds, live]);
+
+  const odds = realOdds ?? initialOdds;
   const matchAnalysis = generateMatchAnalysis(time, scoreA, scoreB, odds, sport, live);
 
   // Pre-match: deterministic "last 10 matches" averages
@@ -248,6 +278,7 @@ const MatchCard = ({
 
   return (
     <div 
+      ref={cardRef}
       onClick={handleCardClick}
       /* AQUI ESTÁ A MÁGICA: Adicionei font-square e tracking-wide no contêiner principal */
       className="font-square tracking-wide group relative overflow-hidden rounded-2xl bg-card border border-border/50 hover:border-primary/50 transition-all duration-500 cursor-pointer shadow-sm hover:shadow-md"

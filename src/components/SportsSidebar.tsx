@@ -6,7 +6,7 @@ import {
   Timer,
 } from "lucide-react";
 import { useMemo } from "react";
-import { allMatches, liveMatches } from "@/data/matches";
+import { useMatches, useLiveMatches } from "@/hooks/useMatchesData";
 
 const SPORT_CONFIG = [
   { name: "Futebol", icon: Trophy },
@@ -22,17 +22,20 @@ interface SportsSidebarProps {
 }
 
 const SportsSidebar = ({ activeSport, onSportChange }: SportsSidebarProps) => {
+  const { matches: allMatchesData } = useMatches();
+  const { matches: liveMatchesData } = useLiveMatches();
+
   const counts = useMemo(() => {
     const map: Record<string, number> = {};
     SPORT_CONFIG.forEach(({ name }) => {
       if (name === "Ao Vivo") {
-        map[name] = liveMatches.length;
+        map[name] = liveMatchesData.length;
       } else {
-        map[name] = allMatches.filter((m) => m.sport === name).length;
+        map[name] = allMatchesData.filter((m) => m.sport === name).length;
       }
     });
     return map;
-  }, []);
+  }, [allMatchesData, liveMatchesData]);
 
   return (
     <aside className="w-full lg:w-56 shrink-0 lg:self-start lg:sticky lg:top-20">

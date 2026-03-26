@@ -394,6 +394,9 @@ export interface SuggestedBet {
   pick: string;
   odds: number;
   probability?: number;
+  confidence?: "alta" | "media" | "baixa";
+  reasoning?: string;
+  type?: "best" | "dream";
 }
 
 export const dreamBets: SuggestedBet[] = [

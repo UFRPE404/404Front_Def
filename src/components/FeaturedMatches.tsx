@@ -1,15 +1,16 @@
 import { Link } from "react-router-dom";
 import MatchCard from "./MatchCard";
 import { useFeaturedMatches, useLiveMatches, useMatchesBySport } from "@/hooks/useMatchesData";
+import { Loader2 } from "lucide-react";
 
 interface FeaturedMatchesProps {
   sport: string;
 }
 
 const FeaturedMatches = ({ sport }: FeaturedMatchesProps) => {
-  const { matches: featuredMatches } = useFeaturedMatches();
+  const { matches: featuredMatches, loading: loadingFeatured } = useFeaturedMatches();
   const { matches: liveMatchesList } = useLiveMatches();
-  const { matches: sportMatches } = useMatchesBySport(
+  const { matches: sportMatches, loading: loadingSport } = useMatchesBySport(
     sport !== "Futebol" && sport !== "Ao Vivo" ? sport : null
   );
 
@@ -18,6 +19,8 @@ const FeaturedMatches = ({ sport }: FeaturedMatchesProps) => {
     if (sport === "Futebol") return featuredMatches;
     return sportMatches;
   })();
+
+  const isLoading = sport === "Futebol" ? loadingFeatured : loadingSport;
 
   const sectionTitle = sport === "Ao Vivo" ? "Ao Vivo" : sport === "Futebol" ? "Sugestões" : sport;
   const linkTo = sport === "Ao Vivo" ? "/ao-vivo" : sport === "Futebol" ? "/esportes" : `/esportes?sport=${encodeURIComponent(sport)}`;
@@ -30,7 +33,26 @@ const FeaturedMatches = ({ sport }: FeaturedMatchesProps) => {
           Ver todos →
         </Link>
       </div>
-      {matches.length === 0 ? (
+
+      {isLoading && matches.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-4">
+          <div className="relative">
+            <div className="w-16 h-16 rounded-full border-4 border-secondary" />
+            <div className="absolute inset-0 w-16 h-16 rounded-full border-4 border-transparent border-t-primary animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-xl">⚽</span>
+            </div>
+          </div>
+          <div className="text-center space-y-1">
+            <h3 className="text-sm font-semibold text-foreground">Carregando sugestões</h3>
+            <p className="text-xs text-muted-foreground">Selecionando os melhores jogos com IA...</p>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50">
+            <Loader2 className="w-3 h-3 text-primary animate-spin" />
+            <span className="text-[11px] text-muted-foreground">Conectando com a API</span>
+          </div>
+        </div>
+      ) : matches.length === 0 ? (
         <p className="text-sm text-muted-foreground px-1">Nenhum jogo disponível para este esporte.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

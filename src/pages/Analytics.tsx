@@ -13,7 +13,8 @@ import {
 } from "recharts";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { getMatchById, type MatchData } from "@/data/matches";
+import type { MatchData } from "@/data/matches";
+import { getMatchById, getMatchLineups } from "@/services/matchesService";
 import { getMatchDetails, type Player, type MatchEvent } from "@/data/matchDetails";
 import { StatBar } from "@/components/StatBars";
 import { FootballStatsView, BasketballStatsView, TennisStatsView, VolleyballStatsView } from "@/components/SportStatsViews";
@@ -431,11 +432,56 @@ const getTabsForSport = (sport?: string): { key: TabKey; label: string; icon: Re
 const Analytics = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
-  const match = matchId ? getMatchById(decodeURIComponent(matchId)) : undefined;
+  const [match, setMatch] = useState<MatchData | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
+  const [apiLineup, setApiLineup] = useState<any>(null);
   const availableTabs = getTabsForSport(match?.sport);
   const [activeTab, setActiveTab] = useState<TabKey>("resumo");
   const [selectedTeam, setSelectedTeam] = useState<"home" | "away">("home");
   const { addSelection, isSelected } = useBetSlip();
+
+  useEffect(() => {
+    if (!matchId) { setLoading(false); return; }
+    setLoading(true);
+    getMatchById(decodeURIComponent(matchId))
+      .then(setMatch)
+      .catch(() => setMatch(undefined))
+      .finally(() => setLoading(false));
+  }, [matchId]);
+
+  // Auto-refresh live match data every 15s
+  useEffect(() => {
+    if (!match?.live || !matchId) return;
+    const interval = setInterval(() => {
+      getMatchById(decodeURIComponent(matchId))
+        .then((updated) => { if (updated) setMatch(updated); })
+        .catch(() => {});
+    }, 15_000);
+    return () => clearInterval(interval);
+  }, [match?.live, matchId]);
+
+  // Fetch real lineup for live/API matches
+  useEffect(() => {
+    if (!match?.live || !match?.id) return;
+    getMatchLineups(match.id)
+      .then(setApiLineup)
+      .catch(() => setApiLineup(null));
+  }, [match?.id, match?.live]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="max-w-5xl mx-auto px-4 py-16 text-center space-y-4">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 w-48 bg-secondary rounded mx-auto" />
+            <div className="h-4 w-64 bg-secondary rounded mx-auto" />
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!match) {
     return (
@@ -844,11 +890,79 @@ const Analytics = () => {
         {/* ====== TAB: ESCALACOES ====== */}
         {activeTab === "escalacoes" && (match?.sport === "Futebol" || match?.sport === "Volei" || !match?.sport) && (
           <div className="space-y-5">
-            {!match.live && (
+            {!match.live && !apiLineup && (
               <RevealSection>
                 <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium w-fit bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"><AlertTriangle className="w-3.5 h-3.5" /> Escalacao estimada</div>
               </RevealSection>
             )}
+            {match.live && apiLineup && (
+              <RevealSection>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium w-fit bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><CheckCircle2 className="w-3.5 h-3.5" /> Escalação oficial (ao vivo)</div>
+              </RevealSection>
+            )}
+            {/* Real API lineup section for live matches */}
+            {apiLineup && (
+              <RevealSection delay={20}>
+                <div className="flex gap-1.5 p-1 rounded-xl bg-secondary/40 mb-4">
+                  <button onClick={() => setSelectedTeam("home")} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${selectedTeam === "home" ? "bg-card text-foreground shadow-sm border border-border/50" : "text-muted-foreground hover:text-foreground"}`}>{match.teamA}</button>
+                  <button onClick={() => setSelectedTeam("away")} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${selectedTeam === "away" ? "bg-card text-foreground shadow-sm border border-border/50" : "text-muted-foreground hover:text-foreground"}`}>{match.teamB}</button>
+                </div>
+                <SectionCard>
+                  <SectionTitle icon={Shirt}>Escalação Oficial</SectionTitle>
+                  {(() => {
+                    const teamData = selectedTeam === "home" ? apiLineup.home : apiLineup.away;
+                    if (!teamData) return <p className="text-sm text-muted-foreground py-4 text-center">Escalação não disponível para este time.</p>;
+                    const players = teamData.players || teamData.lineup || [];
+                    const subs = teamData.substitutes || teamData.subs || [];
+                    return (
+                      <div className="space-y-4">
+                        {players.length > 0 && (
+                          <div>
+                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Titulares ({players.length})</h3>
+                            <div className="space-y-1">
+                              {players.map((p: any, i: number) => (
+                                <div key={p.id || i} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-secondary/30 transition-colors">
+                                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${i === 0 ? "bg-amber-500/20 text-amber-400" : "bg-primary/10 text-primary"}`}>
+                                    {p.shirt_number || p.number || i + 1}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
+                                    {p.position && <p className="text-[10px] text-muted-foreground">{p.position}</p>}
+                                  </div>
+                                  {p.id && <span className="text-[9px] text-muted-foreground/50 font-mono">#{p.id}</span>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {subs.length > 0 && (
+                          <div className="pt-3 border-t border-border/30">
+                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5"><ArrowRightLeft className="w-3 h-3" /> Reservas ({subs.length})</h3>
+                            <div className="space-y-1">
+                              {subs.map((p: any, i: number) => (
+                                <div key={p.id || i} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-secondary/30 transition-colors">
+                                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 bg-secondary/60 text-muted-foreground">
+                                    {p.shirt_number || p.number || "-"}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
+                                    {p.position && <p className="text-[10px] text-muted-foreground">{p.position}</p>}
+                                  </div>
+                                  {p.id && <span className="text-[9px] text-muted-foreground/50 font-mono">#{p.id}</span>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </SectionCard>
+              </RevealSection>
+            )}
+            {/* Fallback to mock lineup when API lineup is not available */}
+            {!apiLineup && (
+              <>
             <RevealSection delay={20}>
               <div className="flex gap-1.5 p-1 rounded-xl bg-secondary/40">
                 <button onClick={() => setSelectedTeam("home")} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${selectedTeam === "home" ? "bg-card text-foreground shadow-sm border border-border/50" : "text-muted-foreground hover:text-foreground"}`}>{match.teamA} {(!match.sport || match.sport === "Futebol") && details.homeLineup.formation ? `(${details.homeLineup.formation})` : ""}</button>
@@ -982,6 +1096,8 @@ const Analytics = () => {
                 </RevealSection>
               );
             })()}
+              </>
+            )}
           </div>
         )}
 

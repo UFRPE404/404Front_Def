@@ -2,9 +2,7 @@ import { Search, Menu, X, Zap, Calendar, Trophy, Layers } from "lucide-react";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import futDataLogo from "@/assets/png_fut_data.png";
-import { featuredMatches, liveMatches, carouselMatches, volleyballMatches } from "@/data/matches";
-
-const allMatches = [...featuredMatches, ...liveMatches, ...carouselMatches, ...volleyballMatches];
+import { useMatches, useLiveMatches } from "@/hooks/useMatchesData";
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -13,6 +11,10 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const { matches: upcomingMatches } = useMatches();
+  const { matches: liveMatches } = useLiveMatches();
+  const allMatches = useMemo(() => [...upcomingMatches, ...liveMatches], [upcomingMatches, liveMatches]);
 
   useEffect(() => {
     if (searchOpen) {
@@ -42,7 +44,7 @@ const Navbar = () => {
         (m.sport ?? "").toLowerCase().includes(q)
     );
 
-    const matchResults = [...featuredMatches, ...carouselMatches, ...volleyballMatches].filter(
+    const matchResults = upcomingMatches.filter(
       (m) =>
         m.teamA.toLowerCase().includes(q) ||
         m.teamB.toLowerCase().includes(q) ||
@@ -63,7 +65,7 @@ const Navbar = () => {
       leagues: Array.from(leagueMap.entries()).slice(0, 3),
       sports: Array.from(sportSet).slice(0, 3),
     };
-  }, [query]);
+  }, [query, liveMatches, upcomingMatches, allMatches]);
 
   const hasResults = results &&
     (results.live.length + results.matches.length + results.leagues.length + results.sports.length > 0);

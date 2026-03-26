@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { MatchData } from "@/data/matches";
 import * as matchesService from "@/services/matchesService";
+import { getFeaturedMatchIds } from "@/services/suggestedBetsService";
 
 export interface UseMatchesResult {
   matches: MatchData[];
@@ -22,7 +23,18 @@ export function useMatches(): UseMatchesResult {
     setError(null);
     matchesService
       .getAllMatches()
-      .then(setMatches)
+      .then((data) => {
+        setMatches(data);
+        // Re-busca após 8s para pegar cache completo da semana (background)
+        setTimeout(() => {
+          matchesService
+            .getAllMatches()
+            .then((fresh) => {
+              if (fresh.length > data.length) setMatches(fresh);
+            })
+            .catch(() => {}); // silencioso
+        }, 8_000);
+      })
       .catch(setError)
       .finally(() => setLoading(false));
   }, []);
@@ -197,4 +209,137 @@ export function useLeaguesBySport(sport: string | null) {
   }, [sport]);
 
   return { leagues, loading, error };
+}
+
+/**
+ * Hook to fetch match lineup from backend
+ */
+export function useMatchLineup(matchId: string | null) {
+  const [lineup, setLineup] = useState<any | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!matchId) return;
+    setLoading(true);
+    setError(null);
+    matchesService
+      .getMatchLineups(matchId)
+      .then(setLineup)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, [matchId]);
+
+  return { lineup, loading, error };
+}
+
+/**
+ * Hook to fetch upcoming matches with odds from backend
+ */
+export function useUpcomingMatchesWithOdds() {
+  const [matches, setMatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    matchesService
+      .getUpcomingMatchesWithOdds()
+      .then(setMatches)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, []);
+
+  return { matches, loading, error };
+}
+
+/**
+ * Hook to fetch team history from backend
+ */
+export function useTeamHistory(teamId: string | null, page = 1) {
+  const [history, setHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!teamId) return;
+    setLoading(true);
+    setError(null);
+    matchesService
+      .getTeamHistory(teamId, page)
+      .then(setHistory)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, [teamId, page]);
+
+  return { history, loading, error };
+}
+
+/**
+ * Hook to fetch player analysis from backend
+ */
+export function usePlayerAnalysis(playerId: string | null, context?: {
+  isDerby?: boolean;
+  isHome?: boolean;
+  isOffensivePlayer?: boolean;
+  isDefensiveOpponent?: boolean;
+  expectedMinutes?: number;
+}) {
+  const [analysis, setAnalysis] = useState<any | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!playerId) return;
+    setLoading(true);
+    setError(null);
+    matchesService
+      .getPlayerAnalysis(playerId, context)
+      .then(setAnalysis)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, [playerId]);
+
+  return { analysis, loading, error };
+}
+
+/**
+ * Hook to fetch player AI recommendation from backend
+ */
+export function usePlayerRecommendation(playerId: string | null) {
+  const [recommendation, setRecommendation] = useState<any | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!playerId) return;
+    setLoading(true);
+    setError(null);
+    matchesService
+      .getPlayerRecommendation(playerId)
+      .then(setRecommendation)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, [playerId]);
+
+  return { recommendation, loading, error };
+}
+
+/**
+ * Hook to fetch AI-selected featured match IDs
+ */
+export function useFeaturedMatchIds() {
+  const [ids, setIds] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    getFeaturedMatchIds()
+      .then(setIds)
+      .catch(() => setIds([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  return { featuredIds: ids, loadingFeatured: loading };
 }
