@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { MatchData, MatchStatistics, MatchEvent, MatchLineup, H2HRecord } from "@/data/matches";
+import type { MatchData, MatchStatistics, MatchEvent, MatchLineup } from "@/data/matches";
 import { apiRequest, API_CONFIG } from "@/config/api";
 
 const API_BASE_URL = API_CONFIG.baseUrl.replace(/\/api$/, '');
@@ -358,6 +358,80 @@ export async function getMatchEvents(matchId: string): Promise<MatchEvent[]> {
   return Promise.resolve([]);
 }
 
-export async function getMatchH2H(matchId: string): Promise<H2HRecord[]> {
-  return Promise.resolve([]);
+// ─── Full Odds types ─────────────────────────────────────────────────────────
+
+export interface FullOddsData {
+  resultado?: { home: number; draw: number; away: number };
+  goalsOverUnder?: { line: string; over: number; under: number }[];
+  handicap?: { label: string; odd: number }[];
+  corners?: { line: string; over: number; under: number }[];
+  cards?: { line: string; over: number; under: number }[];
+  doubleChance?: { homeOrDraw: number; homeOrAway: number; drawOrAway: number };
+  correctScore?: {
+    homeScores: { s: string; o: number }[];
+    draws: { s: string; o: number }[];
+    awayScores: { s: string; o: number }[];
+  };
+  halfTime?: { home: number; draw: number; away: number };
+  oddsHistory?: { time: string; home: number; draw: number; away: number }[];
+}
+
+export interface H2HMatch {
+  id: string;
+  date: string;
+  home: string;
+  away: string;
+  score: string;
+  winner: 'home' | 'away' | 'draw';
+  league: string;
+}
+
+export interface H2HApiData {
+  h2h: H2HMatch[];
+  homeLastMatches: H2HMatch[];
+  awayLastMatches: H2HMatch[];
+  stats: {
+    totalMatches: number;
+    homeWins: number;
+    awayWins: number;
+    draws: number;
+    avgGoals: number;
+    bttsPercentage: number;
+    homeWinPercentage: number;
+    awayWinPercentage: number;
+    drawPercentage: number;
+  };
+}
+
+export async function getFullOddsForMatch(eventId: string): Promise<FullOddsData | null> {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/match/${eventId}/full-odds`, { timeout: 10000 });
+    return response.data as FullOddsData;
+  } catch {
+    return null;
+  }
+}
+
+export async function getMatchH2H(matchId: string): Promise<H2HApiData | null> {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/match/${matchId}/h2h`, { timeout: 35000 });
+    return response.data as H2HApiData;
+  } catch {
+    return null;
+  }
+}
+
+export interface H2HBulkData {
+  h2h: Record<string, H2HApiData>;
+  total: number;
+  preloading: boolean;
+}
+
+export async function getAllH2H(): Promise<H2HBulkData | null> {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/matches/h2h-bulk`, { timeout: 10000 });
+    return response.data as H2HBulkData;
+  } catch {
+    return null;
+  }
 }

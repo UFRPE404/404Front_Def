@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { generateMatchAnalysis } from "@/utils/matchAnalysis";
 import { useMemo, useState, useEffect, useRef } from "react";
-import { getMatchOdds } from "@/services/matchesService";
+import { getMatchOdds, getMatchH2H, type H2HApiData } from "@/services/matchesService";
 
 interface MatchProps {
   id: string;
@@ -27,40 +27,6 @@ const INSIGHT_COLORS = ["--insight-positive", "--insight-warning", "--insight-in
 /** Deterministic pseudo-random from team name — stable across re-renders */
 function teamSeed(name: string): number {
   return name.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-}
-
-/** Generate mock "last 10 matches" averages for a team, tailored by sport */
-function generateTeamAvgStats(teamName: string, sport?: string) {
-  const s = teamSeed(teamName);
-  const r = (salt: number) => ((s * (salt + 1) * 17) % 100) / 100; // 0..1
-
-  if (sport === "Basquete") {
-    return [
-      { label: "Pontos/jogo", value: +(98 + r(1) * 24).toFixed(1) },
-      { label: "Rebotes/jogo", value: +(38 + r(2) * 12).toFixed(1) },
-      { label: "Assist./jogo", value: +(20 + r(3) * 10).toFixed(1) },
-    ];
-  }
-  if (sport === "Tênis") {
-    return [
-      { label: "Aces/jogo", value: +(4 + r(1) * 8).toFixed(1) },
-      { label: "1° Serv. %", value: +(58 + r(2) * 15).toFixed(0) + "%" },
-      { label: "Break Pts/jogo", value: +(1 + r(3) * 4).toFixed(1) },
-    ];
-  }
-  if (sport === "Vôlei") {
-    return [
-      { label: "Pontos/jogo", value: +(55 + r(1) * 20).toFixed(1) },
-      { label: "Aces/jogo", value: +(2 + r(2) * 5).toFixed(1) },
-      { label: "Bloq./jogo", value: +(3 + r(3) * 5).toFixed(1) },
-    ];
-  }
-  // Futebol (default)
-  return [
-    { label: "Gols/jogo", value: +(0.8 + r(1) * 2.2).toFixed(1) },
-    { label: "Cartões/jogo", value: +(1.2 + r(2) * 2.8).toFixed(1) },
-    { label: "Escanteios/jogo", value: +(3.5 + r(3) * 5.5).toFixed(1) },
-  ];
 }
 
 /** Generate deterministic live match stats (A vs B) by sport */
@@ -101,17 +67,6 @@ function generateLiveStats(teamA: string, teamB: string, odds: [number, number, 
 }
 
 type FormResult = "V" | "E" | "D";
-
-/** Deterministic last-5 form for a team */
-function generateTeamForm(teamName: string): FormResult[] {
-  const s = teamSeed(teamName);
-  return Array.from({ length: 5 }, (_, i) => {
-    const v = (s * (i + 7) * 31 + i * 17) % 10;
-    if (v < 5) return "V";
-    if (v < 7) return "E";
-    return "D";
-  });
-}
 
 /** 5 colored squares showing V/E/D form */
 function FormSquares({ form }: { form: FormResult[] }) {
@@ -226,22 +181,33 @@ const MatchCard = ({
 
   // Progressive odds loading: fetch real odds when card becomes visible
   const [realOdds, setRealOdds] = useState<[number, number, number] | null>(null);
+  const [h2hData, setH2hData] = useState<H2HApiData | null>(null);
+  const [h2hLoading, setH2hLoading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const oddsFetched = useRef(false);
+  const h2hFetched = useRef(false);
 
   const isPlaceholderOdds = initialOdds[0] === 1.50 && initialOdds[1] === 3.50 && initialOdds[2] === 4.00;
 
   useEffect(() => {
-    if (!isPlaceholderOdds || live || oddsFetched.current) return;
+    if (live || oddsFetched.current) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && !oddsFetched.current) {
           oddsFetched.current = true;
           observer.disconnect();
-          getMatchOdds(id).then(({ simpleOdds }) => {
-            if (simpleOdds) setRealOdds(simpleOdds);
-          });
+          if (isPlaceholderOdds) {
+            getMatchOdds(id).then(({ simpleOdds }) => {
+              if (simpleOdds) setRealOdds(simpleOdds);
+            });
+          }
+          // Fetch H2H lazily
+          if (!h2hFetched.current) {
+            h2hFetched.current = true;
+            setH2hLoading(true);
+            getMatchH2H(id).then(setH2hData).finally(() => setH2hLoading(false));
+          }
         }
       },
       { rootMargin: "200px" }
@@ -254,14 +220,13 @@ const MatchCard = ({
   const odds = realOdds ?? initialOdds;
   const matchAnalysis = generateMatchAnalysis(time, scoreA, scoreB, odds, sport, live);
 
-  // Pre-match: deterministic "last 10 matches" averages
-  const statsA = useMemo(() => generateTeamAvgStats(teamA, sport), [teamA, sport]);
-  const statsB = useMemo(() => generateTeamAvgStats(teamB, sport), [teamB, sport]);
   // Live: deterministic in-match stats
   const liveStats = useMemo(() => generateLiveStats(teamA, teamB, odds, sport), [teamA, teamB, odds, sport]);
-  // Pre-match: last 5 form
-  const formA = useMemo(() => generateTeamForm(teamA), [teamA]);
-  const formB = useMemo(() => generateTeamForm(teamB), [teamB]);
+
+  // H2H derived data
+  const h2hMatches = h2hData?.h2h ?? [];
+  const homeForm: FormResult[] = (h2hData?.homeLastMatches ?? []).slice(0, 5).map(m => m.winner === 'home' ? 'V' : m.winner === 'draw' ? 'E' : 'D');
+  const awayForm: FormResult[] = (h2hData?.awayLastMatches ?? []).slice(0, 5).map(m => m.winner === 'home' ? 'V' : m.winner === 'draw' ? 'E' : 'D');
   // AI insight sentence
   const aiInsight = useMemo(
     () => generateAIInsight(teamA, teamB, odds, sport, live, scoreA, scoreB),
@@ -401,36 +366,80 @@ const MatchCard = ({
                 ))}
               </div>
             ) : (
-              /* ====== PRÉ-JOGO: Forma + Média últimas partidas ====== */
+              /* ====== PRÉ-JOGO: H2H real ====== */
               <div className="flex flex-col gap-2">
-                {/* Form últimas 5 */}
-                <div className="bg-secondary/20 rounded-lg p-2.5 border border-border/30">
-                  <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest block text-center mb-2">
-                    Últimas 5 partidas
-                  </span>
-                  <div className="flex items-center gap-2 w-full">
-                    <FormSquares form={formA} />
-                    <span className="text-[9px] uppercase font-bold text-muted-foreground/50 tracking-widest shrink-0">FORM</span>
-                    {/* Reverse team B form so most recent is on the inside */}
-                    <FormSquares form={[...formB].reverse()} />
+                {h2hLoading && (
+                  <div className="bg-secondary/20 rounded-lg p-3 border border-border/30 flex items-center justify-center gap-2">
+                    <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <span className="text-[10px] text-muted-foreground">Carregando confrontos...</span>
                   </div>
-                </div>
+                )}
 
-                {/* Médias */}
-                <div className="flex flex-col gap-1.5 bg-secondary/20 rounded-lg p-2.5 border border-border/30">
-                  <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest text-center mb-0.5">
-                    Média últimas 10 partidas
-                  </span>
-                  {statsA.map((stat, i) => (
-                    <StatRow
-                      key={stat.label}
-                      label={stat.label}
-                      valueA={stat.value}
-                      valueB={statsB[i].value}
-                      color={INSIGHT_COLORS[i]}
-                    />
-                  ))}
-                </div>
+                {!h2hLoading && h2hData && (
+                  <>
+                    {/* Form últimas 5 de cada time — dados reais */}
+                    {(homeForm.length > 0 || awayForm.length > 0) && (
+                      <div className="bg-secondary/20 rounded-lg p-2.5 border border-border/30">
+                        <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest block text-center mb-2">
+                          Últimas 5 partidas
+                        </span>
+                        <div className="flex items-center gap-2 w-full">
+                          <FormSquares form={homeForm.length ? homeForm : ['E','E','E','E','E']} />
+                          <span className="text-[9px] uppercase font-bold text-muted-foreground/50 tracking-widest shrink-0">FORM</span>
+                          <FormSquares form={awayForm.length ? [...awayForm].reverse() : ['E','E','E','E','E']} />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Confrontos diretos */}
+                    {h2hMatches.length > 0 ? (
+                      <div className="bg-secondary/20 rounded-lg p-2.5 border border-border/30">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest">Confrontos Diretos</span>
+                          <span className="text-[9px] text-muted-foreground/60">{h2hData.stats.totalMatches} jogos</span>
+                        </div>
+                        {/* Win strip */}
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[11px] font-black text-primary tabular-nums">{h2hData.stats.homeWins}V</span>
+                          <div className="flex-1 mx-2 h-1.5 flex rounded-full overflow-hidden bg-secondary/40">
+                            {(() => { const t = h2hData.stats.totalMatches || 1; return (<>{h2hData.stats.homeWins > 0 && <div className="h-full bg-primary" style={{width:`${(h2hData.stats.homeWins/t)*100}%`}} />}{h2hData.stats.draws > 0 && <div className="h-full bg-muted-foreground/40" style={{width:`${(h2hData.stats.draws/t)*100}%`}} />}{h2hData.stats.awayWins > 0 && <div className="h-full bg-orange-500" style={{width:`${(h2hData.stats.awayWins/t)*100}%`}} />}</>); })()}
+                          </div>
+                          <span className="text-[11px] font-black text-orange-500 tabular-nums">{h2hData.stats.awayWins}V</span>
+                        </div>
+                        {/* Last 3 H2H matches */}
+                        <div className="flex flex-col gap-1">
+                          {h2hMatches.slice(0, 3).map((m, i) => (
+                            <div key={i} className="flex items-center gap-1.5 text-[10px]">
+                              <span className={`font-black px-1 py-0.5 rounded text-[8px] ${
+                                m.winner === 'home' ? 'bg-emerald-500/15 text-emerald-400' : m.winner === 'away' ? 'bg-red-500/15 text-red-400' : 'bg-muted text-muted-foreground'
+                              }`}>{m.winner === 'home' ? 'V' : m.winner === 'away' ? 'D' : 'E'}</span>
+                              <span className="text-muted-foreground/60 tabular-nums">{m.date}</span>
+                              <span className="font-semibold text-foreground/80 truncate">{m.home}</span>
+                              <span className="font-black text-foreground tabular-nums">{m.score}</span>
+                              <span className="font-semibold text-foreground/80 truncate">{m.away}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {/* Stats row */}
+                        <div className="flex items-center justify-around mt-2 pt-2 border-t border-border/20">
+                          <div className="text-center"><span className="text-[11px] font-black text-foreground">{h2hData.stats.avgGoals}</span><span className="text-[8px] text-muted-foreground block">Gols/jogo</span></div>
+                          <div className="text-center"><span className="text-[11px] font-black text-foreground">{h2hData.stats.bttsPercentage}%</span><span className="text-[8px] text-muted-foreground block">Ambos marcam</span></div>
+                          <div className="text-center"><span className="text-[11px] font-black text-foreground">{h2hData.stats.draws}</span><span className="text-[8px] text-muted-foreground block">Empates</span></div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-secondary/20 rounded-lg p-2.5 border border-border/30 text-center">
+                        <span className="text-[10px] text-muted-foreground">Sem confrontos diretos recentes</span>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {!h2hLoading && !h2hData && (
+                  <div className="bg-secondary/20 rounded-lg p-2.5 border border-border/30 text-center">
+                    <span className="text-[10px] text-muted-foreground">Confrontos indisponíveis</span>
+                  </div>
+                )}
               </div>
             )}
 
