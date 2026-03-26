@@ -73,22 +73,31 @@ export function useFeaturedMatches(): UseMatchesResult {
 }
 
 /**
- * Hook to fetch live matches
+ * Hook to fetch live matches with polling (real-time updates)
+ * @param intervalMs - polling interval in ms (default: 10s)
  */
-export function useLiveMatches(): UseMatchesResult {
+export function useLiveMatches(intervalMs = 10_000): UseMatchesResult {
   const [matches, setMatches] = useState<MatchData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    matchesService
-      .getLiveMatches()
-      .then(setMatches)
-      .catch(setError)
-      .finally(() => setLoading(false));
-  }, []);
+    let cancelled = false;
+
+    const fetchLive = () => {
+      setLoading((prev) => matches.length === 0 ? true : prev);
+      matchesService
+        .getLiveMatches()
+        .then((data) => { if (!cancelled) { setMatches(data); setError(null); } })
+        .catch((err) => { if (!cancelled) setError(err); })
+        .finally(() => { if (!cancelled) setLoading(false); });
+    };
+
+    fetchLive();
+    const id = setInterval(fetchLive, intervalMs);
+
+    return () => { cancelled = true; clearInterval(id); };
+  }, [intervalMs]);
 
   return { matches, loading, error };
 }

@@ -1,3 +1,4 @@
+import axios from 'axios'
 import type { MatchData, MatchStatistics, MatchEvent, MatchLineup, H2HRecord } from "@/data/matches";
 import { apiRequest } from "@/config/api";
 import {
@@ -8,15 +9,43 @@ import {
   volleyballMatches,
 } from "@/data/matches";
 
+const API_BASE_URL = 'http://localhost:3000';
+
+const SPORT_ID_MAP: Record<string, string> = {
+  "1": "Futebol",
+  "2": "Tênis",
+  "3": "Basquete",
+  "4": "Hóquei",
+  "5": "Vôlei",
+};
+
+/** Mapeia um item cru da API para o formato MatchData do frontend */
+function mapApiMatchToMatchData(raw: any): MatchData {
+  const [scoreA, scoreB] = (raw.ss ?? "0-0").split("-").map(Number);
+  const minute = raw.timer?.tm ?? 0;
+  const sportName = SPORT_ID_MAP[raw.sport_id] ?? "Futebol";
+
+  return {
+    id: String(raw.id),
+    league: raw.league?.name ?? "Liga desconhecida",
+    time: `${minute}'`,
+    live: true,
+    teamA: raw.home?.name ?? "Time A",
+    teamB: raw.away?.name ?? "Time B",
+    scoreA,
+    scoreB,
+    odds: [
+      raw.odds?.[0] ?? 1.50,
+      raw.odds?.[1] ?? 3.50,
+      raw.odds?.[2] ?? 4.00,
+    ],
+    sport: sportName,
+    period: raw.timer?.tt === "1" ? "2T" : "1T",
+  };
+}
+
 /**
  * Service layer for matches data.
- *
- * To switch from mocks to a real backend:
- *   1. Set VITE_API_URL in your .env (e.g. https://api.myapp.com)
- *   2. Replace the `Promise.resolve(...)` bodies below with `apiRequest<T>(...)`.
- *      Example stubs are commented out next to each function.
- *   3. The hooks that consume these services already handle loading / error states,
- *      so the UI will "just work" once the API is live.
  */
 
 export async function getAllMatches(): Promise<MatchData[]> {
@@ -38,9 +67,9 @@ export async function getFeaturedMatches(): Promise<MatchData[]> {
 }
 
 export async function getLiveMatches(): Promise<MatchData[]> {
-  // TODO: Replace with actual API call
-  // return fetch(`${API_BASE_URL}/matches/live`).then(r => r.json());
-  return Promise.resolve(liveMatches);
+  const response = await axios.get(`${API_BASE_URL}/api/live`);
+  const raw: any[] = response.data;
+  return raw.map(mapApiMatchToMatchData);
 }
 
 export async function getMatchesBySport(sport: string): Promise<MatchData[]> {
