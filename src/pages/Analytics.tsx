@@ -1,4 +1,4 @@
-import Navbar from "@/components/Navbar";
+ï»¿import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BetSlip from "@/components/BetSlip";
 import {
@@ -595,11 +595,11 @@ const Analytics = () => {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="p-2.5 rounded-lg bg-secondary/30">
                           <p className="text-[10px] text-muted-foreground mb-0.5">{match.teamA}</p>
-                          <p className="text-xs font-semibold text-foreground">{details.homeLineup.coach || "—"}</p>
+                          <p className="text-xs font-semibold text-foreground">{details.homeLineup.coach || "ï¿½"}</p>
                         </div>
                         <div className="p-2.5 rounded-lg bg-secondary/30">
                           <p className="text-[10px] text-muted-foreground mb-0.5">{match.teamB}</p>
-                          <p className="text-xs font-semibold text-foreground">{details.awayLineup.coach || "—"}</p>
+                          <p className="text-xs font-semibold text-foreground">{details.awayLineup.coach || "ï¿½"}</p>
                         </div>
                       </div>
                     </div>
@@ -711,7 +711,7 @@ const Analytics = () => {
         {/* ====== TAB: ESTATISTICAS ====== */}
         {activeTab === "estatisticas" && (
           <div className="space-y-5">
-            {/* Live stats block — Bet365/Sofascore-style with real-time badge */}
+            {/* Live stats block ï¿½ Bet365/Sofascore-style with real-time badge */}
             {match.live && (
               <RevealSection>
                 <SectionCard>
@@ -740,14 +740,14 @@ const Analytics = () => {
               </RevealSection>
             )}
 
-            {/* Season / Last 10 stats — Betano-style with category sections */}
+            {/* Season / Last 10 stats ï¿½ Betano-style with category sections */}
             <RevealSection delay={match.live ? 40 : 0}>
               <SectionCard>
                 <div className="flex items-center justify-between mb-1">
                   <SectionTitle icon={BarChart3}>Media - Ultimos 10 Jogos</SectionTitle>
                   <span className="text-[10px] text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">{match.sport || "Futebol"}</span>
                 </div>
-                {/* Team header strip — Bet365 style */}
+                {/* Team header strip ï¿½ Bet365 style */}
                 <div className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-secondary/40 mb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">{match.teamA.charAt(0)}</div>
@@ -759,7 +759,7 @@ const Analytics = () => {
                     <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(220, 20%, 45% / 0.15)", color: "hsl(220, 20%, 65%)" }}>{match.teamB.charAt(0)}</div>
                   </div>
                 </div>
-                {/* Stats grouped by category — Superbet/Sofascore approach */}
+                {/* Stats grouped by category ï¿½ Superbet/Sofascore approach */}
                 {(() => {
                   const categories: { title: string; stats: typeof avgStats }[] = [];
                   const sport = match.sport || "Futebol";
@@ -798,7 +798,7 @@ const Analytics = () => {
               </SectionCard>
             </RevealSection>
 
-            {/* Form guide — Bet365 last 5 results style */}
+            {/* Form guide ï¿½ Bet365 last 5 results style */}
             <RevealSection delay={match.live ? 80 : 40}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[{ team: match.teamA, isHome: true }, { team: match.teamB, isHome: false }].map(({ team, isHome }) => {
@@ -1097,7 +1097,7 @@ const Analytics = () => {
                   <span className="text-[9px] text-muted-foreground ml-auto bg-secondary px-2 py-0.5 rounded-full">{commonStats.length} padroes</span>
                 </div>
                 <p className="text-[11px] text-muted-foreground mb-4 leading-relaxed">
-                  Estatísticas combinadas de <span className="font-semibold text-foreground">{match.teamA}</span> e <span className="font-semibold text-foreground">{match.teamB}</span> com base no histórico de confrontos diretos entre as duas equipes.
+                  Estatï¿½sticas combinadas de <span className="font-semibold text-foreground">{match.teamA}</span> e <span className="font-semibold text-foreground">{match.teamB}</span> com base no histï¿½rico de confrontos diretos entre as duas equipes.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {commonStats.map((cs, i) => {
@@ -1286,8 +1286,8 @@ const Analytics = () => {
                         <div key={i} className="flex items-center gap-2">
                           <span className="text-[11px] text-foreground flex-1 truncate">{m.l}</span>
                           <div className="flex gap-1.5">
-                            <button onClick={() => handleOdd(`${match.id}-odds-cart-o-${i}`, `Cartões Mais ${m.l}`, m.o)} className={`w-16 text-center py-1.5 rounded-lg border transition-colors ${isSelected(`${match.id}-odds-cart-o-${i}`) ? "bg-emerald-500/20 border-emerald-500/40" : "bg-yellow-500/5 border-yellow-500/15 hover:bg-yellow-500/10"}`}><span className={`text-xs font-bold tabular-nums ${isSelected(`${match.id}-odds-cart-o-${i}`) ? "text-emerald-300" : "text-yellow-400"}`}>{m.o}</span></button>
-                            <button onClick={() => handleOdd(`${match.id}-odds-cart-u-${i}`, `Cartões Menos ${m.l}`, m.u)} className={`w-16 text-center py-1.5 rounded-lg border transition-colors ${isSelected(`${match.id}-odds-cart-u-${i}`) ? "bg-emerald-500/20 border-emerald-500/40" : "bg-yellow-500/5 border-yellow-500/15 hover:bg-yellow-500/10"}`}><span className={`text-xs font-bold tabular-nums ${isSelected(`${match.id}-odds-cart-u-${i}`) ? "text-emerald-300" : "text-yellow-400"}`}>{m.u}</span></button>
+                            <button onClick={() => handleOdd(`${match.id}-odds-cart-o-${i}`, `Cartï¿½es Mais ${m.l}`, m.o)} className={`w-16 text-center py-1.5 rounded-lg border transition-colors ${isSelected(`${match.id}-odds-cart-o-${i}`) ? "bg-emerald-500/20 border-emerald-500/40" : "bg-yellow-500/5 border-yellow-500/15 hover:bg-yellow-500/10"}`}><span className={`text-xs font-bold tabular-nums ${isSelected(`${match.id}-odds-cart-o-${i}`) ? "text-emerald-300" : "text-yellow-400"}`}>{m.o}</span></button>
+                            <button onClick={() => handleOdd(`${match.id}-odds-cart-u-${i}`, `Cartï¿½es Menos ${m.l}`, m.u)} className={`w-16 text-center py-1.5 rounded-lg border transition-colors ${isSelected(`${match.id}-odds-cart-u-${i}`) ? "bg-emerald-500/20 border-emerald-500/40" : "bg-yellow-500/5 border-yellow-500/15 hover:bg-yellow-500/10"}`}><span className={`text-xs font-bold tabular-nums ${isSelected(`${match.id}-odds-cart-u-${i}`) ? "text-emerald-300" : "text-yellow-400"}`}>{m.u}</span></button>
                           </div>
                         </div>
                       ))}
@@ -1447,16 +1447,16 @@ const Analytics = () => {
                 "GOL": "Goleiros", "LD": "Laterais Direitos", "LE": "Laterais Esquerdos", "ZAG": "Zagueiros",
                 "VOL": "Volantes", "MC": "Meias Centrais", "MEI": "Meias", "PD": "Pontas Direita",
                 "PE": "Pontas Esquerda", "CA": "Centroavantes", "ATA": "Atacantes",
-                "ARM": "Armadores", "ALA": "Alas", "PIV": "Pivôs", "LIB": "Líberos",
+                "ARM": "Armadores", "ALA": "Alas", "PIV": "Pivï¿½s", "LIB": "Lï¿½beros",
                 "Goleiro": "Goleiros", "Zagueiro": "Zagueiros", "Lateral": "Laterais",
                 "Volante": "Volantes", "Meia": "Meias", "Atacante": "Atacantes",
-                "Armador": "Armadores", "Ala": "Alas", "Pivo": "Pivôs",
+                "Armador": "Armadores", "Ala": "Alas", "Pivo": "Pivï¿½s",
               };
               const posSingular: Record<string, string> = {
                 "GOL": "Goleiro", "LD": "Lateral Direito", "LE": "Lateral Esquerdo", "ZAG": "Zagueiro",
                 "VOL": "Volante", "MC": "Meia Central", "MEI": "Meia", "PD": "Ponta Direita",
                 "PE": "Ponta Esquerda", "CA": "Centroavante", "ATA": "Atacante",
-                "ARM": "Armador", "ALA": "Ala", "PIV": "Pivô", "LIB": "Líbero",
+                "ARM": "Armador", "ALA": "Ala", "PIV": "Pivï¿½", "LIB": "Lï¿½bero",
               };
               const posOrder = ["GOL", "ZAG", "LD", "LE", "VOL", "MC", "MEI", "PD", "PE", "CA", "ATA", "ARM", "ALA", "PIV", "LIB", "Goleiro", "Zagueiro", "Lateral", "Volante", "Meia", "Atacante", "Armador", "Ala", "Pivo"];
               const byPosition: Record<string, Player[]> = {};
