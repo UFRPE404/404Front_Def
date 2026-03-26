@@ -1,9 +1,9 @@
-ï»¿import Navbar from "@/components/Navbar";
+import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BetSlip from "@/components/BetSlip";
 import {
   TrendingUp, TrendingDown, Target, Zap, ArrowLeft,
-  MapPin, User, Users, Cloud, Shirt, ArrowRightLeft, Star,
+  MapPin, User, Users, Shirt, ArrowRightLeft, Star,
   Circle, Clock, Trophy, Info, Shield, AlertTriangle,
   CheckCircle2, BarChart3, History, LineChart, Swords,
 } from "lucide-react";
@@ -17,6 +17,9 @@ import { getMatchById, type MatchData } from "@/data/matches";
 import { getMatchDetails, type Player, type MatchEvent } from "@/data/matchDetails";
 import { StatBar } from "@/components/StatBars";
 import { FootballStatsView, BasketballStatsView, TennisStatsView, VolleyballStatsView } from "@/components/SportStatsViews";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useBetSlip } from "@/contexts/BetSlipContext";
+
 
 /* --- Reveal animation --- */
 function useReveal() {
@@ -185,14 +188,81 @@ function generateH2hData(match: MatchData) {
   };
 }
 
+/* --- OddPopoverButton --- */
+function OddPopoverButton({ label, odd, match, onNavigate }: {
+  label: string;
+  odd: string;
+  match: MatchData;
+  onNavigate: () => void;
+}) {
+  const { addSelection, isSelected } = useBetSlip();
+  const betId = `pattern-${match.id}-${label}`;
+  const selected = isSelected(betId);
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          className="flex items-center gap-1.5 text-[10px] font-bold text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 px-2.5 py-1 rounded-full transition-colors"
+        >
+          <TrendingUp className="w-3 h-3" />
+          Ver odd
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="top" align="end" className="p-0 w-auto border-0 shadow-xl bg-transparent">
+        <div className="rounded-xl overflow-hidden border border-amber-500/30 bg-card shadow-lg shadow-black/30 min-w-[200px]">
+          {/* Header */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-amber-600/20 to-transparent border-b border-amber-500/20">
+            <div className="w-5 h-5 rounded bg-amber-500/20 flex items-center justify-center text-[10px] font-black text-amber-400">E</div>
+            <span className="text-[11px] font-bold text-foreground">Esportes da Sorte</span>
+          </div>
+          {/* Body */}
+          <div className="px-3 py-2.5 space-y-2.5">
+            <p className="text-[10px] text-muted-foreground leading-snug">{label}</p>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl font-black tabular-nums text-amber-400">{odd}</span>
+              <span className="text-[10px] text-muted-foreground font-medium">odds</span>
+            </div>
+            <button
+              onClick={() => addSelection({
+                id: betId,
+                league: match.league,
+                teamA: match.teamA,
+                teamB: match.teamB,
+                pick: label,
+                odds: parseFloat(odd),
+              })}
+              className={`w-full flex items-center justify-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors ${
+                selected
+                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                  : "bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
+              }`}
+            >
+              {selected ? <CheckCircle2 className="w-3 h-3" /> : <Star className="w-3 h-3" />}
+              {selected ? "Adicionado ao bilhete" : "Adicionar ao bilhete"}
+            </button>
+            <button
+              onClick={onNavigate}
+              className="w-full flex items-center justify-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors py-1"
+            >
+              Ver todas as odds <ArrowRightLeft className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 /* --- Common Stats Generator --- */
 function generateCommonStats(match: MatchData) {
   const sport = match.sport || "Futebol";
   const seed = match.odds[0] * 37 + match.odds[1] * 13 + match.odds[2] * 7;
   const r = (off: number, min: number, max: number) => Math.round(((seed * (off + 1) * 23) % (max - min + 1)) + min);
   switch (sport) {
-    case "Basquete":
-      return [
+    case "Basquete": {
+      const o = (pct: number) => (Math.round((100 / pct) * 1.06 * 100) / 100).toFixed(2);
+      const ps = [
         { icon: "B", label: "Mais de 200.5 pontos", record: `${r(1,5,8)}/10`, pct: r(1,50,80) },
         { icon: "R", label: "Mais de 40 rebotes", record: `${r(2,6,9)}/10`, pct: r(2,60,90) },
         { icon: "A", label: "Mais de 22 assistencias", record: `${r(3,5,8)}/10`, pct: r(3,50,80) },
@@ -202,8 +272,11 @@ function generateCommonStats(match: MatchData) {
         { icon: "M", label: "Margem > 10 pts", record: `${r(7,3,6)}/10`, pct: r(7,30,60) },
         { icon: "F", label: "FG% acima de 45%", record: `${r(8,5,8)}/10`, pct: r(8,50,80) },
       ];
-    case "Tenis":
-      return [
+      return ps.map(p => ({ ...p, odd: o(p.pct) }));
+    }
+    case "Tenis": {
+      const o = (pct: number) => (Math.round((100 / pct) * 1.06 * 100) / 100).toFixed(2);
+      const ps = [
         { icon: "G", label: "Mais de 20.5 games", record: `${r(1,6,9)}/10`, pct: r(1,60,90) },
         { icon: "A", label: "Mais de 8 aces", record: `${r(2,4,7)}/10`, pct: r(2,40,70) },
         { icon: "S", label: `${match.teamA} venceu 1o set`, record: `${r(3,5,9)}/10`, pct: r(3,50,90) },
@@ -213,8 +286,11 @@ function generateCommonStats(match: MatchData) {
         { icon: "B", label: "Quebra de saque no 1o set", record: `${r(7,5,8)}/10`, pct: r(7,50,80) },
         { icon: "D", label: "Partida com mais de 2h", record: `${r(8,4,7)}/10`, pct: r(8,40,70) },
       ];
-    case "Volei":
-      return [
+      return ps.map(p => ({ ...p, odd: o(p.pct) }));
+    }
+    case "Volei": {
+      const o = (pct: number) => (Math.round((100 / pct) * 1.06 * 100) / 100).toFixed(2);
+      const ps = [
         { icon: "S", label: "Mais de 3.5 sets", record: `${r(1,4,7)}/10`, pct: r(1,40,70) },
         { icon: "A", label: "Mais de 5 aces", record: `${r(2,4,8)}/10`, pct: r(2,40,80) },
         { icon: "1", label: `${match.teamA} venceu 1o set`, record: `${r(3,5,8)}/10`, pct: r(3,50,80) },
@@ -224,8 +300,11 @@ function generateCommonStats(match: MatchData) {
         { icon: "E", label: "Eficiencia de ataque > 45%", record: `${r(7,5,8)}/10`, pct: r(7,50,80) },
         { icon: "X", label: "Menos de 20 erros", record: `${r(8,3,6)}/10`, pct: r(8,30,60) },
       ];
-    default:
-      return [
+      return ps.map(p => ({ ...p, odd: o(p.pct) }));
+    }
+    default: {
+      const o = (pct: number) => (Math.round((100 / pct) * 1.06 * 100) / 100).toFixed(2);
+      const ps = [
         { icon: "G", label: "Mais de 2.5 gols", record: `${r(1,4,8)}/10`, pct: r(1,40,80) },
         { icon: "G", label: "Ambas marcaram", record: `${r(2,5,8)}/10`, pct: r(2,50,80) },
         { icon: "C", label: "Mais de 3.5 cartoes", record: `${r(3,5,8)}/10`, pct: r(3,50,80) },
@@ -238,6 +317,8 @@ function generateCommonStats(match: MatchData) {
         { icon: "P", label: `${match.teamA} primeiro a marcar`, record: `${r(8,5,9)}/10`, pct: r(8,50,90) },
         { icon: "P", label: `${match.teamB} primeiro a marcar`, record: `${r(11,4,7)}/10`, pct: r(11,40,70) },
       ];
+      return ps.map(p => ({ ...p, odd: o(p.pct) }));
+    }
   }
 }
 
@@ -354,6 +435,7 @@ const Analytics = () => {
   const availableTabs = getTabsForSport(match?.sport);
   const [activeTab, setActiveTab] = useState<TabKey>("resumo");
   const [selectedTeam, setSelectedTeam] = useState<"home" | "away">("home");
+  const { addSelection, isSelected } = useBetSlip();
 
   if (!match) {
     return (
@@ -385,6 +467,10 @@ const Analytics = () => {
   const normA = Math.round((probA / totalProb) * 100);
   const normDraw = Math.round((probDraw / totalProb) * 100);
   const normB = 100 - normA - normDraw;
+
+  const handleOdd = (betId: string, pick: string, odd: number) => {
+    addSelection({ id: betId, league: match.league, teamA: match.teamA, teamB: match.teamB, pick, odds: odd });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -465,8 +551,6 @@ const Analytics = () => {
             </div>
             <div className="px-5 py-2 border-t border-border/30 flex items-center justify-center gap-4 text-[10px] text-muted-foreground">
               <span className="flex items-center gap-1"><User className="w-3 h-3" /> {details.referee}</span>
-              <span className="flex items-center gap-1"><Cloud className="w-3 h-3" /> {details.weather} {details.temperature}</span>
-              <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {details.attendance}</span>
             </div>
           </div>
         </RevealSection>
@@ -489,14 +573,12 @@ const Analytics = () => {
               <RevealSection>
                 <SectionCard>
                   <SectionTitle icon={Info}>Informacoes da Partida</SectionTitle>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     {[
                       { icon: Trophy, label: "Competicao", value: match.league },
                       { icon: Clock, label: "Horario", value: `${match.date ? `${match.date} - ` : ""}${match.time}` },
                       { icon: MapPin, label: "Local", value: details.stadium },
                       { icon: User, label: "Arbitro", value: details.referee },
-                      { icon: Cloud, label: "Clima", value: `${details.weather} - ${details.temperature}` },
-                      { icon: Users, label: "Publico", value: details.attendance },
                     ].map((item, i) => (
                       <div key={i} className="flex items-start gap-2.5 p-3 rounded-lg bg-secondary/30">
                         <item.icon className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
@@ -513,11 +595,11 @@ const Analytics = () => {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="p-2.5 rounded-lg bg-secondary/30">
                           <p className="text-[10px] text-muted-foreground mb-0.5">{match.teamA}</p>
-                          <p className="text-xs font-semibold text-foreground">{details.homeLineup.coach || "â€”"}</p>
+                          <p className="text-xs font-semibold text-foreground">{details.homeLineup.coach || "—"}</p>
                         </div>
                         <div className="p-2.5 rounded-lg bg-secondary/30">
                           <p className="text-[10px] text-muted-foreground mb-0.5">{match.teamB}</p>
-                          <p className="text-xs font-semibold text-foreground">{details.awayLineup.coach || "â€”"}</p>
+                          <p className="text-xs font-semibold text-foreground">{details.awayLineup.coach || "—"}</p>
                         </div>
                       </div>
                     </div>
@@ -629,7 +711,7 @@ const Analytics = () => {
         {/* ====== TAB: ESTATISTICAS ====== */}
         {activeTab === "estatisticas" && (
           <div className="space-y-5">
-            {/* Live stats block â€” Bet365/Sofascore-style with real-time badge */}
+            {/* Live stats block — Bet365/Sofascore-style with real-time badge */}
             {match.live && (
               <RevealSection>
                 <SectionCard>
@@ -658,14 +740,14 @@ const Analytics = () => {
               </RevealSection>
             )}
 
-            {/* Season / Last 10 stats â€” Betano-style with category sections */}
+            {/* Season / Last 10 stats — Betano-style with category sections */}
             <RevealSection delay={match.live ? 40 : 0}>
               <SectionCard>
                 <div className="flex items-center justify-between mb-1">
                   <SectionTitle icon={BarChart3}>Media - Ultimos 10 Jogos</SectionTitle>
                   <span className="text-[10px] text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">{match.sport || "Futebol"}</span>
                 </div>
-                {/* Team header strip â€” Bet365 style */}
+                {/* Team header strip — Bet365 style */}
                 <div className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-secondary/40 mb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">{match.teamA.charAt(0)}</div>
@@ -677,7 +759,7 @@ const Analytics = () => {
                     <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(220, 20%, 45% / 0.15)", color: "hsl(220, 20%, 65%)" }}>{match.teamB.charAt(0)}</div>
                   </div>
                 </div>
-                {/* Stats grouped by category â€” Superbet/Sofascore approach */}
+                {/* Stats grouped by category — Superbet/Sofascore approach */}
                 {(() => {
                   const categories: { title: string; stats: typeof avgStats }[] = [];
                   const sport = match.sport || "Futebol";
@@ -716,7 +798,7 @@ const Analytics = () => {
               </SectionCard>
             </RevealSection>
 
-            {/* Form guide â€” Bet365 last 5 results style */}
+            {/* Form guide — Bet365 last 5 results style */}
             <RevealSection delay={match.live ? 80 : 40}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[{ team: match.teamA, isHome: true }, { team: match.teamB, isHome: false }].map(({ team, isHome }) => {
@@ -951,13 +1033,18 @@ const Analytics = () => {
                     <div className="w-1 h-4 rounded-full bg-primary" />
                     <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Comparacao Tecnica</h3>
                   </div>
-                  <div className="aspect-square max-w-[300px] mx-auto">
+                  <div className="w-full" style={{ height: 260 }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <RadarChart cx="50%" cy="50%" outerRadius="68%" data={radarData}>
                         <PolarGrid stroke="hsl(var(--border)/0.2)" gridType="polygon" />
                         <PolarAngleAxis dataKey="stat" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9, fontWeight: 600 }} />
                         <Radar name={match.teamA} dataKey={match.teamA} stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.15} strokeWidth={2.5} />
                         <Radar name={match.teamB} dataKey={match.teamB} stroke="#f97316" fill="#f97316" fillOpacity={0.08} strokeWidth={2} />
+                        <RechartsTooltip
+                          contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
+                          labelStyle={{ color: "hsl(var(--muted-foreground))", fontWeight: 700, marginBottom: 4 }}
+                          itemStyle={{ color: "hsl(var(--foreground))" }}
+                        />
                       </RadarChart>
                     </ResponsiveContainer>
                   </div>
@@ -1004,11 +1091,14 @@ const Analytics = () => {
             {/* Patterns */}
             <RevealSection delay={60}>
               <SectionCard>
-                <div className="flex items-center gap-2 mb-5">
+                <div className="flex items-center gap-2 mb-3">
                   <div className="w-1 h-4 rounded-full bg-primary" />
                   <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Padroes Relevantes</h3>
                   <span className="text-[9px] text-muted-foreground ml-auto bg-secondary px-2 py-0.5 rounded-full">{commonStats.length} padroes</span>
                 </div>
+                <p className="text-[11px] text-muted-foreground mb-4 leading-relaxed">
+                  Estatísticas combinadas de <span className="font-semibold text-foreground">{match.teamA}</span> e <span className="font-semibold text-foreground">{match.teamB}</span> com base no histórico de confrontos diretos entre as duas equipes.
+                </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {commonStats.map((cs, i) => {
                     const pctColor = cs.pct >= 70 ? "text-emerald-400" : cs.pct >= 50 ? "text-amber-400" : "text-red-400";
@@ -1029,6 +1119,15 @@ const Analytics = () => {
                         </div>
                         <div className="mt-3 h-2 rounded-full bg-muted/20 overflow-hidden">
                           <div className={`h-full rounded-full ${pctBg} transition-all duration-1000`} style={{ width: `${cs.pct}%`, opacity: 0.7 }} />
+                        </div>
+                        {/* Odd button */}
+                        <div className="mt-3 pt-2.5 border-t border-border/20 flex items-center justify-end">
+                          <OddPopoverButton
+                            label={cs.label}
+                            odd={cs.odd}
+                            match={match}
+                            onNavigate={() => setActiveTab("odds")}
+                          />
                         </div>
                       </div>
                     );
@@ -1068,14 +1167,19 @@ const Analytics = () => {
                     { label: match.teamA, sub: "1", odd: match.odds[0], active: match.odds[0] === Math.min(...match.odds) },
                     { label: "Empate", sub: "X", odd: match.odds[1], active: match.odds[1] === Math.min(...match.odds) },
                     { label: match.teamB, sub: "2", odd: match.odds[2], active: match.odds[2] === Math.min(...match.odds) },
-                  ].map((m, i) => (
-                    <div key={i} className={`relative flex flex-col items-center gap-1.5 pt-4 pb-4 px-2 rounded-xl cursor-pointer transition-all border-2 ${m.active ? "border-primary bg-primary/5 shadow-sm shadow-primary/10" : "border-border/30 bg-secondary/20 hover:border-primary/30 hover:bg-primary/5"}`}>
-                      {m.active && <div className="absolute top-1.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-primary bg-primary/15 px-2 py-0.5 rounded-full">Favorito</div>}
-                      <span className={`text-[10px] text-muted-foreground font-medium truncate w-full text-center ${m.active ? "mt-4" : ""}`}>{m.label}</span>
-                      <span className={`text-2xl font-black tabular-nums ${m.active ? "text-primary" : "text-foreground"}`}>{m.odd.toFixed(2)}</span>
+                  ].map((m, i) => {
+                    const betId = `${match.id}-odds-1x2-${m.sub}`;
+                    const sel = isSelected(betId);
+                    return (
+                    <button key={i} onClick={() => handleOdd(betId, m.label, m.odd)} className={`relative flex flex-col items-center gap-1.5 pt-4 pb-4 px-2 w-full rounded-xl transition-all border-2 ${sel ? "border-emerald-500 bg-emerald-500/10 shadow-sm shadow-emerald-500/20" : m.active ? "border-primary bg-primary/5 shadow-sm shadow-primary/10" : "border-border/30 bg-secondary/20 hover:border-primary/30 hover:bg-primary/5"}`}>
+                      {m.active && !sel && <div className="absolute top-1.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-primary bg-primary/15 px-2 py-0.5 rounded-full">Favorito</div>}
+                      {sel && <div className="absolute top-1.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded-full">No bilhete</div>}
+                      <span className={`text-[10px] font-medium truncate w-full text-center ${(m.active || sel) ? "mt-4" : ""} ${sel ? "text-emerald-400" : "text-muted-foreground"}`}>{m.label}</span>
+                      <span className={`text-2xl font-black tabular-nums ${sel ? "text-emerald-400" : m.active ? "text-primary" : "text-foreground"}`}>{m.odd.toFixed(2)}</span>
                       <span className="text-[9px] text-muted-foreground tabular-nums">{Math.round((1 / m.odd) * 100)}%</span>
-                    </div>
-                  ))}
+                    </button>
+                    );
+                  })}
                 </div>
               </SectionCard>
             </RevealSection>
@@ -1100,11 +1204,11 @@ const Analytics = () => {
                     return (
                       <div className="space-y-1.5">
                         {lines.map((m, i) => (
-                          <div key={i} className="flex items-center gap-2">
+                      <div key={i} className="flex items-center gap-2">
                             <span className="text-[11px] text-foreground flex-1 truncate">{m.l}</span>
                             <div className="flex gap-1.5">
-                              <div className="w-16 text-center py-1.5 rounded-lg bg-emerald-500/5 border border-emerald-500/15 cursor-pointer hover:bg-emerald-500/10 transition-colors"><span className="text-xs font-bold text-emerald-400 tabular-nums">{m.o}</span></div>
-                              <div className="w-16 text-center py-1.5 rounded-lg bg-destructive/5 border border-destructive/15 cursor-pointer hover:bg-destructive/10 transition-colors"><span className="text-xs font-bold text-destructive tabular-nums">{m.u}</span></div>
+                              <button onClick={() => handleOdd(`${match.id}-odds-gols-o-${i}`, `Mais ${m.l}`, m.o)} className={`w-16 text-center py-1.5 rounded-lg border transition-colors ${isSelected(`${match.id}-odds-gols-o-${i}`) ? "bg-emerald-500/20 border-emerald-500/40" : "bg-emerald-500/5 border-emerald-500/15 hover:bg-emerald-500/10"}`}><span className={`text-xs font-bold tabular-nums ${isSelected(`${match.id}-odds-gols-o-${i}`) ? "text-emerald-300" : "text-emerald-400"}`}>{m.o}</span></button>
+                              <button onClick={() => handleOdd(`${match.id}-odds-gols-u-${i}`, `Menos ${m.l}`, m.u)} className={`w-16 text-center py-1.5 rounded-lg border transition-colors ${isSelected(`${match.id}-odds-gols-u-${i}`) ? "bg-emerald-500/20 border-emerald-500/40" : "bg-destructive/5 border-destructive/15 hover:bg-destructive/10"}`}><span className={`text-xs font-bold tabular-nums ${isSelected(`${match.id}-odds-gols-u-${i}`) ? "text-emerald-300" : "text-destructive"}`}>{m.u}</span></button>
                             </div>
                           </div>
                         ))}
@@ -1130,10 +1234,10 @@ const Analytics = () => {
                     return (
                       <div className="space-y-1.5">
                         {hcp.map((m, i) => (
-                          <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-blue-500/5 border border-blue-500/10 cursor-pointer hover:bg-blue-500/10 transition-colors">
+                          <button key={i} onClick={() => handleOdd(`${match.id}-odds-hcp-${i}`, m.l, m.o)} className={`w-full flex items-center justify-between p-2.5 rounded-lg border transition-colors ${isSelected(`${match.id}-odds-hcp-${i}`) ? "bg-emerald-500/10 border-emerald-500/30" : "bg-blue-500/5 border-blue-500/10 hover:bg-blue-500/10"}`}>
                             <span className="text-[11px] text-foreground font-medium">{m.l}</span>
-                            <span className="text-sm font-bold text-blue-400 tabular-nums">{m.o}</span>
-                          </div>
+                            <span className={`text-sm font-bold tabular-nums ${isSelected(`${match.id}-odds-hcp-${i}`) ? "text-emerald-400" : "text-blue-400"}`}>{m.o}</span>
+                          </button>
                         ))}
                       </div>
                     );
@@ -1157,8 +1261,8 @@ const Analytics = () => {
                         <div key={i} className="flex items-center gap-2">
                           <span className="text-[11px] text-foreground flex-1 truncate">{m.l}</span>
                           <div className="flex gap-1.5">
-                            <div className="w-16 text-center py-1.5 rounded-lg bg-violet-500/5 border border-violet-500/15 cursor-pointer hover:bg-violet-500/10 transition-colors"><span className="text-xs font-bold text-violet-400 tabular-nums">{m.o}</span></div>
-                            <div className="w-16 text-center py-1.5 rounded-lg bg-violet-500/5 border border-violet-500/15 cursor-pointer hover:bg-violet-500/10 transition-colors"><span className="text-xs font-bold text-violet-400 tabular-nums">{m.u}</span></div>
+                            <button onClick={() => handleOdd(`${match.id}-odds-esc-o-${i}`, `Escanteios Mais ${m.l}`, m.o)} className={`w-16 text-center py-1.5 rounded-lg border transition-colors ${isSelected(`${match.id}-odds-esc-o-${i}`) ? "bg-emerald-500/20 border-emerald-500/40" : "bg-violet-500/5 border-violet-500/15 hover:bg-violet-500/10"}`}><span className={`text-xs font-bold tabular-nums ${isSelected(`${match.id}-odds-esc-o-${i}`) ? "text-emerald-300" : "text-violet-400"}`}>{m.o}</span></button>
+                            <button onClick={() => handleOdd(`${match.id}-odds-esc-u-${i}`, `Escanteios Menos ${m.l}`, m.u)} className={`w-16 text-center py-1.5 rounded-lg border transition-colors ${isSelected(`${match.id}-odds-esc-u-${i}`) ? "bg-emerald-500/20 border-emerald-500/40" : "bg-violet-500/5 border-violet-500/15 hover:bg-violet-500/10"}`}><span className={`text-xs font-bold tabular-nums ${isSelected(`${match.id}-odds-esc-u-${i}`) ? "text-emerald-300" : "text-violet-400"}`}>{m.u}</span></button>
                           </div>
                         </div>
                       ))}
@@ -1182,8 +1286,8 @@ const Analytics = () => {
                         <div key={i} className="flex items-center gap-2">
                           <span className="text-[11px] text-foreground flex-1 truncate">{m.l}</span>
                           <div className="flex gap-1.5">
-                            <div className="w-16 text-center py-1.5 rounded-lg bg-yellow-500/5 border border-yellow-500/15 cursor-pointer hover:bg-yellow-500/10 transition-colors"><span className="text-xs font-bold text-yellow-400 tabular-nums">{m.o}</span></div>
-                            <div className="w-16 text-center py-1.5 rounded-lg bg-yellow-500/5 border border-yellow-500/15 cursor-pointer hover:bg-yellow-500/10 transition-colors"><span className="text-xs font-bold text-yellow-400 tabular-nums">{m.u}</span></div>
+                            <button onClick={() => handleOdd(`${match.id}-odds-cart-o-${i}`, `Cartões Mais ${m.l}`, m.o)} className={`w-16 text-center py-1.5 rounded-lg border transition-colors ${isSelected(`${match.id}-odds-cart-o-${i}`) ? "bg-emerald-500/20 border-emerald-500/40" : "bg-yellow-500/5 border-yellow-500/15 hover:bg-yellow-500/10"}`}><span className={`text-xs font-bold tabular-nums ${isSelected(`${match.id}-odds-cart-o-${i}`) ? "text-emerald-300" : "text-yellow-400"}`}>{m.o}</span></button>
+                            <button onClick={() => handleOdd(`${match.id}-odds-cart-u-${i}`, `Cartões Menos ${m.l}`, m.u)} className={`w-16 text-center py-1.5 rounded-lg border transition-colors ${isSelected(`${match.id}-odds-cart-u-${i}`) ? "bg-emerald-500/20 border-emerald-500/40" : "bg-yellow-500/5 border-yellow-500/15 hover:bg-yellow-500/10"}`}><span className={`text-xs font-bold tabular-nums ${isSelected(`${match.id}-odds-cart-u-${i}`) ? "text-emerald-300" : "text-yellow-400"}`}>{m.u}</span></button>
                           </div>
                         </div>
                       ))}
@@ -1206,10 +1310,10 @@ const Analytics = () => {
                         { l: `${match.teamA} vence 1T`, o: +(1.65+(match.odds[0]%0.1)).toFixed(2) },
                         { l: `${match.teamB} vence 1T`, o: +(2.15+(match.odds[2]%0.1)).toFixed(2) },
                       ].map((m, i) => (
-                        <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-orange-500/5 border border-orange-500/10 cursor-pointer hover:bg-orange-500/10 transition-colors">
+                        <button key={i} onClick={() => handleOdd(`${match.id}-odds-qrt-${i}`, m.l, m.o)} className={`w-full flex items-center justify-between p-2.5 rounded-lg border transition-colors ${isSelected(`${match.id}-odds-qrt-${i}`) ? "bg-emerald-500/10 border-emerald-500/30" : "bg-orange-500/5 border-orange-500/10 hover:bg-orange-500/10"}`}>
                           <span className="text-[11px] text-foreground font-medium">{m.l}</span>
-                          <span className="text-sm font-bold text-orange-400 tabular-nums">{m.o}</span>
-                        </div>
+                          <span className={`text-sm font-bold tabular-nums ${isSelected(`${match.id}-odds-qrt-${i}`) ? "text-emerald-400" : "text-orange-400"}`}>{m.o}</span>
+                        </button>
                       ))}
                     </div>
                   </SectionCard>
@@ -1234,10 +1338,10 @@ const Analytics = () => {
                       ? [{ l: `${match.teamA} 3-0`, o: +(3.50+(match.odds[0]%0.15)).toFixed(2) }, { l: `${match.teamA} 3-1`, o: +(3.20+(match.odds[0]%0.12)).toFixed(2) }, { l: `${match.teamA} 3-2`, o: +(4.50+(match.odds[0]%0.18)).toFixed(2) }, { l: `${match.teamB} 3-0`, o: +(4.00+(match.odds[2]%0.15)).toFixed(2) }, { l: `${match.teamB} 3-1`, o: +(3.80+(match.odds[2]%0.12)).toFixed(2) }, { l: `${match.teamB} 3-2`, o: +(5.00+(match.odds[2]%0.18)).toFixed(2) }]
                       : [{ l: "Ambas Marcam Sim", o: +(1.75+(match.odds[0]%0.07)).toFixed(2) }, { l: "Ambas Marcam Nao", o: +(2.00-(match.odds[0]%0.06)).toFixed(2) }, { l: "Dupla Chance 1X", o: +(1.18+(match.odds[0]%0.04)).toFixed(2) }, { l: "Dupla Chance 12", o: +(1.22+(match.odds[1]%0.04)).toFixed(2) }, { l: "Dupla Chance X2", o: +(1.30+(match.odds[2]%0.05)).toFixed(2) }, { l: `1o Gol ${match.teamA}`, o: +(1.70+(match.odds[0]%0.1)).toFixed(2) }, { l: `1o Gol ${match.teamB}`, o: +(2.10+(match.odds[2]%0.08)).toFixed(2) }, { l: "Sem Gols", o: +(6.00+(match.odds[1]%0.4)).toFixed(2) }, { l: `${match.teamA} Vence 1T`, o: +(2.30+(match.odds[0]%0.12)).toFixed(2) }, { l: "Empate 1T", o: +(1.85+(match.odds[1]%0.08)).toFixed(2) }, { l: `${match.teamB} Vence 1T`, o: +(3.10+(match.odds[2]%0.15)).toFixed(2) }, { l: "Gol no 1T", o: +(1.40+(match.odds[0]%0.05)).toFixed(2) }];
                     return sp.map((m, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-secondary/20 border border-border/20 cursor-pointer hover:border-primary/20 hover:bg-primary/5 transition-all group">
-                        <span className="text-[11px] text-foreground group-hover:text-primary transition-colors">{m.l}</span>
-                        <span className="text-sm font-bold text-primary tabular-nums">{m.o}</span>
-                      </div>
+                      <button key={i} onClick={() => handleOdd(`${match.id}-odds-sp-${i}`, m.l, m.o)} className={`flex items-center justify-between p-3 rounded-xl border transition-all group ${isSelected(`${match.id}-odds-sp-${i}`) ? "bg-emerald-500/10 border-emerald-500/30" : "bg-secondary/20 border-border/20 hover:border-primary/20 hover:bg-primary/5"}`}>
+                        <span className={`text-[11px] transition-colors ${isSelected(`${match.id}-odds-sp-${i}`) ? "text-emerald-400" : "text-foreground group-hover:text-primary"}`}>{m.l}</span>
+                        <span className={`text-sm font-bold tabular-nums ${isSelected(`${match.id}-odds-sp-${i}`) ? "text-emerald-400" : "text-primary"}`}>{m.o}</span>
+                      </button>
                     ));
                   })()}
                 </div>
@@ -1257,10 +1361,10 @@ const Analytics = () => {
                       <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-2">{match.teamA}</p>
                       <div className="space-y-1.5">
                         {[{ s: "1-0", o: +(6.50+(match.odds[0]%0.4)).toFixed(2) }, { s: "2-0", o: +(9.00+(match.odds[0]%0.5)).toFixed(2) }, { s: "2-1", o: +(7.50+(match.odds[0]%0.35)).toFixed(2) }, { s: "3-0", o: +(16.00+(match.odds[0]%0.8)).toFixed(2) }, { s: "3-1", o: +(12.00+(match.odds[0]%0.6)).toFixed(2) }].map((r, i) => (
-                          <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-secondary/20 border border-border/15 cursor-pointer hover:border-primary/20 hover:bg-primary/5 transition-all">
+                          <button key={i} onClick={() => handleOdd(`${match.id}-odds-exact-a-${i}`, `${match.teamA} ${r.s}`, r.o)} className={`w-full flex items-center justify-between p-2 rounded-lg border transition-all ${isSelected(`${match.id}-odds-exact-a-${i}`) ? "bg-emerald-500/10 border-emerald-500/30" : "bg-secondary/20 border-border/15 hover:border-primary/20 hover:bg-primary/5"}`}>
                             <span className="text-xs text-foreground font-medium tabular-nums">{r.s}</span>
-                            <span className="text-xs font-bold text-primary tabular-nums">{r.o}</span>
-                          </div>
+                            <span className={`text-xs font-bold tabular-nums ${isSelected(`${match.id}-odds-exact-a-${i}`) ? "text-emerald-400" : "text-primary"}`}>{r.o}</span>
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -1268,10 +1372,10 @@ const Analytics = () => {
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Empate</p>
                       <div className="space-y-1.5">
                         {[{ s: "0-0", o: +(8.00+(match.odds[1]%0.5)).toFixed(2) }, { s: "1-1", o: +(5.50+(match.odds[1]%0.3)).toFixed(2) }, { s: "2-2", o: +(12.00+(match.odds[1]%0.6)).toFixed(2) }, { s: "3-3", o: +(35.00+(match.odds[1]%1.5)).toFixed(2) }].map((r, i) => (
-                          <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-secondary/20 border border-border/15 cursor-pointer hover:border-primary/20 hover:bg-primary/5 transition-all">
+                          <button key={i} onClick={() => handleOdd(`${match.id}-odds-exact-e-${i}`, `Empate ${r.s}`, r.o)} className={`w-full flex items-center justify-between p-2 rounded-lg border transition-all ${isSelected(`${match.id}-odds-exact-e-${i}`) ? "bg-emerald-500/10 border-emerald-500/30" : "bg-secondary/20 border-border/15 hover:border-primary/20 hover:bg-primary/5"}`}>
                             <span className="text-xs text-foreground font-medium tabular-nums">{r.s}</span>
-                            <span className="text-xs font-bold text-foreground tabular-nums">{r.o}</span>
-                          </div>
+                            <span className={`text-xs font-bold tabular-nums ${isSelected(`${match.id}-odds-exact-e-${i}`) ? "text-emerald-400" : "text-foreground"}`}>{r.o}</span>
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -1279,10 +1383,10 @@ const Analytics = () => {
                       <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-wider mb-2">{match.teamB}</p>
                       <div className="space-y-1.5">
                         {[{ s: "0-1", o: +(7.00+(match.odds[2]%0.4)).toFixed(2) }, { s: "0-2", o: +(10.00+(match.odds[2]%0.5)).toFixed(2) }, { s: "1-2", o: +(8.50+(match.odds[2]%0.4)).toFixed(2) }, { s: "0-3", o: +(18.00+(match.odds[2]%0.8)).toFixed(2) }, { s: "1-3", o: +(14.00+(match.odds[2]%0.7)).toFixed(2) }].map((r, i) => (
-                          <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-secondary/20 border border-border/15 cursor-pointer hover:border-primary/20 hover:bg-primary/5 transition-all">
+                          <button key={i} onClick={() => handleOdd(`${match.id}-odds-exact-b-${i}`, `${match.teamB} ${r.s}`, r.o)} className={`w-full flex items-center justify-between p-2 rounded-lg border transition-all ${isSelected(`${match.id}-odds-exact-b-${i}`) ? "bg-emerald-500/10 border-emerald-500/30" : "bg-secondary/20 border-border/15 hover:border-primary/20 hover:bg-primary/5"}`}>
                             <span className="text-xs text-foreground font-medium tabular-nums">{r.s}</span>
-                            <span className="text-xs font-bold text-foreground/70 tabular-nums">{r.o}</span>
-                          </div>
+                            <span className={`text-xs font-bold tabular-nums ${isSelected(`${match.id}-odds-exact-b-${i}`) ? "text-emerald-400" : "text-foreground/70"}`}>{r.o}</span>
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -1343,16 +1447,16 @@ const Analytics = () => {
                 "GOL": "Goleiros", "LD": "Laterais Direitos", "LE": "Laterais Esquerdos", "ZAG": "Zagueiros",
                 "VOL": "Volantes", "MC": "Meias Centrais", "MEI": "Meias", "PD": "Pontas Direita",
                 "PE": "Pontas Esquerda", "CA": "Centroavantes", "ATA": "Atacantes",
-                "ARM": "Armadores", "ALA": "Alas", "PIV": "PivÃ´s", "LIB": "LÃ­beros",
+                "ARM": "Armadores", "ALA": "Alas", "PIV": "Pivôs", "LIB": "Líberos",
                 "Goleiro": "Goleiros", "Zagueiro": "Zagueiros", "Lateral": "Laterais",
                 "Volante": "Volantes", "Meia": "Meias", "Atacante": "Atacantes",
-                "Armador": "Armadores", "Ala": "Alas", "Pivo": "PivÃ´s",
+                "Armador": "Armadores", "Ala": "Alas", "Pivo": "Pivôs",
               };
               const posSingular: Record<string, string> = {
                 "GOL": "Goleiro", "LD": "Lateral Direito", "LE": "Lateral Esquerdo", "ZAG": "Zagueiro",
                 "VOL": "Volante", "MC": "Meia Central", "MEI": "Meia", "PD": "Ponta Direita",
                 "PE": "Ponta Esquerda", "CA": "Centroavante", "ATA": "Atacante",
-                "ARM": "Armador", "ALA": "Ala", "PIV": "PivÃ´", "LIB": "LÃ­bero",
+                "ARM": "Armador", "ALA": "Ala", "PIV": "Pivô", "LIB": "Líbero",
               };
               const posOrder = ["GOL", "ZAG", "LD", "LE", "VOL", "MC", "MEI", "PD", "PE", "CA", "ATA", "ARM", "ALA", "PIV", "LIB", "Goleiro", "Zagueiro", "Lateral", "Volante", "Meia", "Atacante", "Armador", "Ala", "Pivo"];
               const byPosition: Record<string, Player[]> = {};
@@ -1436,3 +1540,4 @@ const Analytics = () => {
 };
 
 export default Analytics;
+
