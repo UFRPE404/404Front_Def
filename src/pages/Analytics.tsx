@@ -13,7 +13,7 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import type { MatchData } from "@/data/matches";
-import { getMatchById, getMatchLineups, getFullOddsForMatch, getMatchH2H, type FullOddsData, type H2HApiData } from "@/services/matchesService";
+import { getMatchById, getMatchLineups, getFullOddsForMatch, getMatchH2H, getMatchHistoric, getMatchLiveStats, type FullOddsData, type H2HApiData, type MatchHistoricData, type MatchLiveStats } from "@/services/matchesService";
 import { getMatchDetails, type Player, type MatchEvent } from "@/data/matchDetails";
 import { StatBar } from "@/components/StatBars";
 import { FootballStatsView, BasketballStatsView, TennisStatsView, VolleyballStatsView } from "@/components/SportStatsViews";
@@ -380,6 +380,9 @@ const Analytics = () => {
   const [apiLineup, setApiLineup] = useState<any>(null);
   const [fullOdds, setFullOdds] = useState<FullOddsData | null>(null);
   const [h2hApiData, setH2hApiData] = useState<H2HApiData | null>(null);
+  const [historicData, setHistoricData] = useState<MatchHistoricData | null>(null);
+  const [liveStats, setLiveStats] = useState<MatchLiveStats | null>(null);
+  const [liveStatsFailed, setLiveStatsFailed] = useState(false);
   const [oddsLoading, setOddsLoading] = useState(false);
   const [h2hLoading, setH2hLoading] = useState(false);
   const availableTabs = getTabsForSport(match?.sport);
@@ -424,7 +427,24 @@ const Analytics = () => {
       .finally(() => setOddsLoading(false));
     setH2hLoading(true);
     getMatchH2H(match.id).then(setH2hApiData).finally(() => setH2hLoading(false));
+    if (!match?.live) {
+      getMatchHistoric(match.id, 10).then(setHistoricData).catch(() => setHistoricData(null));
+    }
   }, [match?.id]);
+
+  // Fetch live stats para jogos ao vivo (com refresh a cada 30s)
+  useEffect(() => {
+    if (!match?.live || !match?.id) return;
+    setLiveStatsFailed(false);
+    const fetchLive = () => {
+      getMatchLiveStats(match.id)
+        .then(data => { setLiveStats(data); if (!data) setLiveStatsFailed(true); })
+        .catch(() => { setLiveStats(null); setLiveStatsFailed(true); });
+    };
+    fetchLive();
+    const interval = setInterval(fetchLive, 30_000);
+    return () => clearInterval(interval);
+  }, [match?.id, match?.live]);
 
   if (loading) {
     return (
@@ -759,16 +779,61 @@ const Analytics = () => {
                   {match.sport === "Basquete" && details.basketballStats && <BasketballStatsView teamA={match.teamA} teamB={match.teamB} stats={details.basketballStats} />}
                   {match.sport === "Tenis" && details.tennisStats && <TennisStatsView teamA={match.teamA} teamB={match.teamB} stats={details.tennisStats} />}
                   {match.sport === "Volei" && details.volleyballStats && <VolleyballStatsView teamA={match.teamA} teamB={match.teamB} stats={details.volleyballStats} />}
-                  {(!match.sport || match.sport === "Futebol") && <FootballStatsView teamA={match.teamA} teamB={match.teamB} stats={details.stats} />}
+                  {(!match.sport || match.sport === "Futebol") && (() => {
+                    if (liveStatsFailed || (!liveStats && !liveStatsFailed)) {
+                      return liveStatsFailed
+                        ? <p className="text-xs text-muted-foreground text-center py-4">Nao foi possivel obter dados das estatisticas da partida</p>
+                        : <p className="text-xs text-muted-foreground text-center py-4 animate-pulse">A carregar estatisticas...</p>;
+                    }
+                    if (!liveStats) return null;
+                    const h = liveStats.home;
+                    const a = liveStats.away;
+                    const sections = [
+                      { title: "Ataque", rows: [
+                        ...(h.possession != null || a.possession != null ? [{ label: "Posse de Bola", home: h.possession ?? 0, away: a.possession ?? 0, unit: "%" }] : []),
+                        ...(h.shots != null || a.shots != null ? [{ label: "Finalizacoes", home: h.shots ?? 0, away: a.shots ?? 0 }] : []),
+                        ...(h.shotsOnTarget != null || a.shotsOnTarget != null ? [{ label: "Chutes no Alvo", home: h.shotsOnTarget ?? 0, away: a.shotsOnTarget ?? 0 }] : []),
+                        ...(h.attacks != null || a.attacks != null ? [{ label: "Ataques", home: h.attacks ?? 0, away: a.attacks ?? 0 }] : []),
+                        ...(h.dangerousAttacks != null || a.dangerousAttacks != null ? [{ label: "Ataques Perigosos", home: h.dangerousAttacks ?? 0, away: a.dangerousAttacks ?? 0 }] : []),
+                      ]},
+                      { title: "Defesa", rows: [
+                        ...(h.saves != null || a.saves != null ? [{ label: "Defesas do Goleiro", home: h.saves ?? 0, away: a.saves ?? 0 }] : []),
+                      ]},
+                      { title: "Disciplina & Outros", rows: [
+                        ...(h.corners != null || a.corners != null ? [{ label: "Escanteios", home: h.corners ?? 0, away: a.corners ?? 0 }] : []),
+                        ...(h.yellowCards != null || a.yellowCards != null ? [{ label: "Cartoes Amarelos", home: h.yellowCards ?? 0, away: a.yellowCards ?? 0 }] : []),
+                        ...(h.redCards != null || a.redCards != null ? [{ label: "Cartoes Vermelhos", home: h.redCards ?? 0, away: a.redCards ?? 0 }] : []),
+                      ]},
+                    ].filter(s => s.rows.length > 0);
+                    return (
+                      <div className="space-y-3 mt-1">
+                        {sections.map((sec, si) => (
+                          <div key={si}>
+                            <div className="flex items-center gap-2 mb-1 mt-2">
+                              <div className="w-1 h-4 rounded-full bg-primary/60" />
+                              <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{sec.title}</h4>
+                            </div>
+                            <div className="divide-y divide-border/30">
+                              {sec.rows.map((row, ri) => (
+                                <StatBar key={ri} label={row.label} home={row.home} away={row.away} unit={(row as any).unit} />
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </SectionCard>
               </RevealSection>
             )}
 
-            {/* Season / Last 10 stats � Betano-style with category sections */}
+            {/* Season / Last 10 stats ou Live Stats */}
             <RevealSection delay={match.live ? 40 : 0}>
               <SectionCard>
                 <div className="flex items-center justify-between mb-1">
-                  <SectionTitle icon={BarChart3}>Media - Ultimos 10 Jogos</SectionTitle>
+                  <SectionTitle icon={BarChart3}>
+                    {match.live ? `Estatisticas ao Vivo${liveStats?.minute ? ` — ${liveStats.minute}'` : ""}` : "Media - Ultimos 10 Jogos"}
+                  </SectionTitle>
                   <span className="text-[10px] text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">{match.sport || "Futebol"}</span>
                 </div>
                 {/* Team header strip � Bet365 style */}
@@ -783,10 +848,120 @@ const Analytics = () => {
                     <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(220, 20%, 45% / 0.15)", color: "hsl(220, 20%, 65%)" }}>{match.teamB.charAt(0)}</div>
                   </div>
                 </div>
-                {/* Stats grouped by category � Superbet/Sofascore approach */}
+                {/* Stats grouped by category */}
                 {(() => {
-                  const categories: { title: string; stats: typeof avgStats }[] = [];
                   const sport = match.sport || "Futebol";
+
+                  // ── Jogo ao vivo: estatísticas em tempo real ──
+                  if (match.live) {
+                    if (liveStatsFailed || !liveStats) {
+                      return (
+                        <p className="text-xs text-muted-foreground text-center py-6">
+                          Nao foi possivel obter dados das estatisticas da partida
+                        </p>
+                      );
+                    }
+                    const h = liveStats.home;
+                    const a = liveStats.away;
+                    const liveCategories = [
+                      {
+                        title: "Ataque",
+                        rows: [
+                          ...(h.shots != null || a.shots != null ? [{ label: "Finalizacoes", home: h.shots ?? 0, away: a.shots ?? 0, unit: undefined }] : []),
+                          ...(h.shotsOnTarget != null || a.shotsOnTarget != null ? [{ label: "Chutes no Alvo", home: h.shotsOnTarget ?? 0, away: a.shotsOnTarget ?? 0, unit: undefined }] : []),
+                          ...(h.attacks != null || a.attacks != null ? [{ label: "Ataques", home: h.attacks ?? 0, away: a.attacks ?? 0, unit: undefined }] : []),
+                          ...(h.dangerousAttacks != null || a.dangerousAttacks != null ? [{ label: "Ataques Perigosos", home: h.dangerousAttacks ?? 0, away: a.dangerousAttacks ?? 0, unit: undefined }] : []),
+                        ],
+                      },
+                      {
+                        title: "Posse",
+                        rows: [
+                          ...(h.possession != null || a.possession != null ? [{ label: "Posse de Bola %", home: h.possession ?? 0, away: a.possession ?? 0, unit: "%" }] : []),
+                        ],
+                      },
+                      {
+                        title: "Defesa",
+                        rows: [
+                          ...(h.saves != null || a.saves != null ? [{ label: "Defesas Goleiro", home: h.saves ?? 0, away: a.saves ?? 0, unit: undefined }] : []),
+                        ],
+                      },
+                      {
+                        title: "Disciplina & Outros",
+                        rows: [
+                          ...(h.corners != null || a.corners != null ? [{ label: "Escanteios", home: h.corners ?? 0, away: a.corners ?? 0, unit: undefined }] : []),
+                          ...(h.yellowCards != null || a.yellowCards != null ? [{ label: "Cartoes Amarelos", home: h.yellowCards ?? 0, away: a.yellowCards ?? 0, unit: undefined }] : []),
+                          ...(h.redCards != null || a.redCards != null ? [{ label: "Cartoes Vermelhos", home: h.redCards ?? 0, away: a.redCards ?? 0, unit: undefined }] : []),
+                        ],
+                      },
+                    ].filter(cat => cat.rows.length > 0);
+
+                    return liveCategories.map((cat, ci) => (
+                      <div key={ci} className={ci > 0 ? "mt-4" : ""}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-1 h-3.5 rounded-full bg-primary" />
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{cat.title}</span>
+                        </div>
+                        <div className="space-y-0">
+                          {cat.rows.map((stat, i) => (
+                            <StatBar key={i} label={stat.label} home={stat.home} away={stat.away} unit={stat.unit} />
+                          ))}
+                        </div>
+                      </div>
+                    ));
+                  }
+
+                  // ── Futebol com dados reais da API (histórico) ──
+                  if (sport === "Futebol" && historicData) {
+                    const h = historicData.home.avg;
+                    const a = historicData.away.avg;
+                    const realCategories = [
+                      {
+                        title: "Ataque",
+                        rows: [
+                          { label: "Gols Marcados", home: h.avgGoalsScored, away: a.avgGoalsScored, unit: undefined },
+                          ...(h.avgShots != null || a.avgShots != null ? [{ label: "Finalizacoes", home: h.avgShots ?? 0, away: a.avgShots ?? 0, unit: undefined }] : []),
+                          ...(h.avgShotsOnTarget != null || a.avgShotsOnTarget != null ? [{ label: "Chutes no Alvo", home: h.avgShotsOnTarget ?? 0, away: a.avgShotsOnTarget ?? 0, unit: undefined }] : []),
+                        ],
+                      },
+                      {
+                        title: "Posse & Passes",
+                        rows: [
+                          ...(h.avgPossession != null || a.avgPossession != null ? [{ label: "Posse de Bola %", home: h.avgPossession ?? 0, away: a.avgPossession ?? 0, unit: "%" }] : []),
+                        ],
+                      },
+                      {
+                        title: "Defesa",
+                        rows: [
+                          { label: "Gols Sofridos", home: h.avgGoalsConceded, away: a.avgGoalsConceded, unit: undefined },
+                          ...(h.avgSaves != null || a.avgSaves != null ? [{ label: "Defesas Goleiro", home: h.avgSaves ?? 0, away: a.avgSaves ?? 0, unit: undefined }] : []),
+                        ],
+                      },
+                      {
+                        title: "Disciplina & Outros",
+                        rows: [
+                          ...(h.avgCorners != null || a.avgCorners != null ? [{ label: "Escanteios", home: h.avgCorners ?? 0, away: a.avgCorners ?? 0, unit: undefined }] : []),
+                          ...(h.avgYellowCards != null || a.avgYellowCards != null ? [{ label: "Cartoes Amarelos", home: h.avgYellowCards ?? 0, away: a.avgYellowCards ?? 0, unit: undefined }] : []),
+                        ],
+                      },
+                    ].filter(cat => cat.rows.length > 0);
+
+                    return realCategories.map((cat, ci) => (
+                      <div key={ci} className={ci > 0 ? "mt-4" : ""}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-1 h-3.5 rounded-full bg-primary" />
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{cat.title}</span>
+                        </div>
+                        <div className="space-y-0">
+                          {cat.rows.map((stat, i) => (
+                            <StatBar key={i} label={stat.label} home={stat.home} away={stat.away} unit={stat.unit} />
+                          ))}
+                        </div>
+                      </div>
+                    ));
+                  }
+
+                  // ── Fallback mock (outros esportes ou enquanto carrega) ──
+                  const categories: { title: string; stats: typeof avgStats }[] = [];
                   if (sport === "Futebol") {
                     categories.push({ title: "Ataque", stats: avgStats.filter(s => ["Gols Marcados", "Finalizacoes", "Chutes no Alvo"].includes(s.label)) });
                     categories.push({ title: "Posse & Passes", stats: avgStats.filter(s => ["Posse de Bola %", "Passes por Jogo", "Precisao Passe %"].includes(s.label)) });
@@ -822,15 +997,23 @@ const Analytics = () => {
               </SectionCard>
             </RevealSection>
 
-            {/* Form guide � Bet365 last 5 results style */}
+            {/* Form guide — Bet365 last 5 results style */}
             <RevealSection delay={match.live ? 80 : 40}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[{ team: match.teamA, isHome: true }, { team: match.teamB, isHome: false }].map(({ team, isHome }) => {
-                  const seed = match.odds[0] * 37 + match.odds[isHome ? 0 : 2] * 13;
-                  const results = Array.from({ length: 5 }, (_, i) => {
-                    const v = Math.round(((seed * (i + 1) * 23) % 3));
-                    return v === 0 ? "W" : v === 1 ? "D" : "L";
-                  });
+                  const historicTeam = historicData ? (isHome ? historicData.home : historicData.away) : null;
+                  const results: ("W" | "D" | "L")[] = historicTeam
+                    ? (historicTeam.totals.form.slice(0, 5).split("") as ("W" | "D" | "L")[])
+                    : (() => {
+                        const seed = match.odds[0] * 37 + match.odds[isHome ? 0 : 2] * 13;
+                        return Array.from({ length: 5 }, (_, i) => {
+                          const v = Math.round(((seed * (i + 1) * 23) % 3));
+                          return (v === 0 ? "W" : v === 1 ? "D" : "L") as "W" | "D" | "L";
+                        });
+                      })();
+                  const wCount = results.filter(r => r === "W").length;
+                  const dCount = results.filter(r => r === "D").length;
+                  const lCount = results.filter(r => r === "L").length;
                   return (
                     <SectionCard key={team}>
                       <div className="flex items-center gap-2 mb-3">
@@ -852,9 +1035,9 @@ const Analytics = () => {
                         ))}
                       </div>
                       <div className="flex items-center justify-between mt-2 text-[10px] text-muted-foreground">
-                        <span>{results.filter(r => r === "W").length}V {results.filter(r => r === "D").length}E {results.filter(r => r === "L").length}D</span>
-                        <span className={`font-semibold ${results.filter(r => r === "W").length >= 3 ? "text-emerald-400" : results.filter(r => r === "L").length >= 3 ? "text-destructive" : "text-yellow-400"}`}>
-                          {results.filter(r => r === "W").length >= 3 ? "Boa fase" : results.filter(r => r === "L").length >= 3 ? "Fase ruim" : "Irregular"}
+                        <span>{wCount}V {dCount}E {lCount}D</span>
+                        <span className={`font-semibold ${wCount >= 3 ? "text-emerald-400" : lCount >= 3 ? "text-destructive" : "text-yellow-400"}`}>
+                          {wCount >= 3 ? "Boa fase" : lCount >= 3 ? "Fase ruim" : "Irregular"}
                         </span>
                       </div>
                     </SectionCard>

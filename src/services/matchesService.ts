@@ -427,6 +427,94 @@ export interface H2HBulkData {
   preloading: boolean;
 }
 
+export interface TeamAvgStats {
+  avgGoalsScored: number;
+  avgGoalsConceded: number;
+  avgShots: number | null;
+  avgShotsOnTarget: number | null;
+  avgPossession: number | null;
+  avgCorners: number | null;
+  avgYellowCards: number | null;
+  avgSaves: number | null;
+}
+
+export interface TeamHistoricSummary {
+  teamId: string;
+  teamName: string;
+  games: {
+    eventId: string;
+    date: string;
+    opponent: string;
+    league: string;
+    venue: "home" | "away";
+    goalsScored: number;
+    goalsConceded: number;
+    result: "W" | "D" | "L";
+    score: string;
+  }[];
+  totals: {
+    matches: number;
+    wins: number;
+    draws: number;
+    losses: number;
+    goalsScored: number;
+    goalsConceded: number;
+    cleanSheets: number;
+    btts: number;
+    winPercentage: number;
+    form: string;
+  };
+  avg: TeamAvgStats;
+}
+
+export interface MatchHistoricData {
+  eventId: string;
+  home: TeamHistoricSummary;
+  away: TeamHistoricSummary;
+}
+
+export async function getMatchHistoric(matchId: string, limit = 10): Promise<MatchHistoricData | null> {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/match/${matchId}/historic`, {
+      params: { limit },
+      timeout: 35000,
+    });
+    return response.data as MatchHistoricData;
+  } catch {
+    return null;
+  }
+}
+
+export interface TeamLiveStats {
+  name: string;
+  shots: number | null;
+  shotsOnTarget: number | null;
+  possession: number | null;
+  corners: number | null;
+  yellowCards: number | null;
+  redCards: number | null;
+  attacks: number | null;
+  dangerousAttacks: number | null;
+  saves: number | null;
+}
+
+export interface MatchLiveStats {
+  eventId: string;
+  minute: number | null;
+  score: string;
+  home: TeamLiveStats;
+  away: TeamLiveStats;
+}
+
+export async function getMatchLiveStats(matchId: string): Promise<MatchLiveStats | null> {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/match/${matchId}/live-stats`, { timeout: 10000 });
+    return response.data as MatchLiveStats;
+  } catch {
+    return null;
+  }
+}
+
 export async function getAllH2H(): Promise<H2HBulkData | null> {
   try {
     const response = await axios.get(`${API_BASE_URL}/api/matches/h2h-bulk`, { timeout: 10000 });
