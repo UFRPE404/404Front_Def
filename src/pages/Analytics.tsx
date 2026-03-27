@@ -462,6 +462,8 @@ const Analytics = () => {
   const commonStats = generateCommonStats(match);
   const avgStats = generateAvgStats(match);
   // Use real 1X2 odds when available, fall back to match.odds
+  const isPlaceholderOdds = match.odds[0] === 1.50 && match.odds[1] === 3.50 && match.odds[2] === 4.00;
+  const hasRealOdds = !!fullOdds?.resultado;
   const realHomeOdd = fullOdds?.resultado?.home ?? match.odds[0];
   const realDrawOdd = fullOdds?.resultado?.draw ?? match.odds[1];
   const realAwayOdd = fullOdds?.resultado?.away ?? match.odds[2];
@@ -546,19 +548,21 @@ const Analytics = () => {
                 </div>
               </div>
             </div>
-            <div className="px-5 py-3 border-t border-border/30 flex items-center justify-center gap-3 bg-secondary/20">
-              <div className="flex items-center gap-1.5 mr-2">
-                <div className="w-5 h-5 rounded bg-amber-500/20 flex items-center justify-center"><span className="text-[9px] font-black text-amber-400">E</span></div>
-                <span className="text-[9px] text-muted-foreground font-medium hidden sm:inline">Esportes da Sorte</span>
-              </div>
-              {[{ label: "1", value: realHomeOdd }, { label: "X", value: realDrawOdd }, { label: "2", value: realAwayOdd }].map((o) => (
-                <div key={o.label} className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer border border-transparent hover:border-primary/30 transition-all bg-card">
-                  <span className="text-[10px] font-bold text-muted-foreground">{o.label}</span>
-                  <span className="text-sm font-bold text-foreground tabular-nums">{o.value.toFixed(2)}</span>
-                  <span className="text-[9px] text-muted-foreground tabular-nums">({Math.round((1 / o.value) * 100)}%)</span>
+            {(!isPlaceholderOdds || hasRealOdds) && (
+              <div className="px-5 py-3 border-t border-border/30 flex items-center justify-center gap-3 bg-secondary/20">
+                <div className="flex items-center gap-1.5 mr-2">
+                  <div className="w-5 h-5 rounded bg-amber-500/20 flex items-center justify-center"><span className="text-[9px] font-black text-amber-400">E</span></div>
+                  <span className="text-[9px] text-muted-foreground font-medium hidden sm:inline">Esportes da Sorte</span>
                 </div>
-              ))}
-            </div>
+                {[{ label: "1", value: realHomeOdd }, { label: "X", value: realDrawOdd }, { label: "2", value: realAwayOdd }].map((o) => (
+                  <div key={o.label} className="flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer border border-transparent hover:border-primary/30 transition-all bg-card">
+                    <span className="text-[10px] font-bold text-muted-foreground">{o.label}</span>
+                    <span className="text-sm font-bold text-foreground tabular-nums">{o.value.toFixed(2)}</span>
+                    <span className="text-[9px] text-muted-foreground tabular-nums">({Math.round((1 / o.value) * 100)}%)</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="px-5 py-2 border-t border-border/30 flex items-center justify-center gap-4 text-[10px] text-muted-foreground">
               <span className="flex items-center gap-1"><User className="w-3 h-3" /> {details.referee}</span>
             </div>
@@ -660,17 +664,23 @@ const Analytics = () => {
               <RevealSection delay={60}>
                 <SectionCard>
                   <h3 className="text-xs font-semibold text-foreground mb-3 flex items-center gap-2"><LineChart className="w-3.5 h-3.5 text-primary" /> Odds Atuais</h3>
-                  <div className="space-y-1.5">
-                    {[{ label: match.teamA, odds: realHomeOdd, highlight: realHomeOdd === minOdd }, { label: "Empate", odds: realDrawOdd, highlight: realDrawOdd === minOdd }, { label: match.teamB, odds: realAwayOdd, highlight: realAwayOdd === minOdd }].map((o, idx) => (
-                      <div key={idx} className={`flex items-center justify-between p-2.5 rounded-lg transition-colors ${o.highlight ? "bg-primary/5 border border-primary/20" : "bg-secondary/30"}`}>
-                        <span className={`text-xs ${o.highlight ? "text-primary font-semibold" : "text-muted-foreground"}`}>{o.label}</span>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-sm font-bold tabular-nums ${o.highlight ? "text-primary" : "text-foreground"}`}>{o.odds.toFixed(2)}</span>
-                          <span className="text-[10px] text-muted-foreground tabular-nums">{Math.round((1 / o.odds) * 100)}%</span>
+                  {isPlaceholderOdds && !hasRealOdds ? (
+                    <div className="flex flex-col items-center gap-2 py-4 text-center">
+                      <p className="text-xs font-semibold text-amber-600">Não foi possível encontrar as odds dessa partida.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {[{ label: match.teamA, odds: realHomeOdd, highlight: realHomeOdd === minOdd }, { label: "Empate", odds: realDrawOdd, highlight: realDrawOdd === minOdd }, { label: match.teamB, odds: realAwayOdd, highlight: realAwayOdd === minOdd }].map((o, idx) => (
+                        <div key={idx} className={`flex items-center justify-between p-2.5 rounded-lg transition-colors ${o.highlight ? "bg-primary/5 border border-primary/20" : "bg-secondary/30"}`}>
+                          <span className={`text-xs ${o.highlight ? "text-primary font-semibold" : "text-muted-foreground"}`}>{o.label}</span>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-sm font-bold tabular-nums ${o.highlight ? "text-primary" : "text-foreground"}`}>{o.odds.toFixed(2)}</span>
+                            <span className="text-[10px] text-muted-foreground tabular-nums">{Math.round((1 / o.odds) * 100)}%</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </SectionCard>
               </RevealSection>
               <RevealSection delay={100}>
@@ -1259,25 +1269,42 @@ const Analytics = () => {
                       <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Resultado Final</h3>
                       <span className="text-[9px] text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">1X2</span>
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { label: match.teamA, sub: "1", odd: realHomeOdd, active: realHomeOdd === Math.min(...realOdds) },
-                        { label: "Empate", sub: "X", odd: realDrawOdd, active: realDrawOdd === Math.min(...realOdds) },
-                        { label: match.teamB, sub: "2", odd: realAwayOdd, active: realAwayOdd === Math.min(...realOdds) },
-                      ].map((m, i) => {
-                        const betId = `${match.id}-odds-1x2-${m.sub}`;
-                        const sel = isSelected(betId);
-                        return (
-                          <button key={i} onClick={() => handleOdd(betId, m.label, m.odd)} className={`relative flex flex-col items-center gap-1.5 pt-4 pb-4 px-2 w-full rounded-xl transition-all border-2 ${sel ? "border-emerald-500 bg-emerald-500/10 shadow-sm shadow-emerald-500/20" : m.active ? "border-primary bg-primary/5 shadow-sm shadow-primary/10" : "border-border/30 bg-secondary/20 hover:border-primary/30 hover:bg-primary/5"}`}>
-                            {m.active && !sel && <div className="absolute top-1.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-primary bg-primary/15 px-2 py-0.5 rounded-full">Favorito</div>}
-                            {sel && <div className="absolute top-1.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded-full">No bilhete</div>}
-                            <span className={`text-[10px] font-medium truncate w-full text-center ${(m.active || sel) ? "mt-4" : ""} ${sel ? "text-emerald-400" : "text-muted-foreground"}`}>{m.label}</span>
-                            <span className={`text-2xl font-black tabular-nums ${sel ? "text-emerald-400" : m.active ? "text-primary" : "text-foreground"}`}>{m.odd.toFixed(2)}</span>
-                            <span className="text-[9px] text-muted-foreground tabular-nums">{Math.round((1 / m.odd) * 100)}%</span>
-                          </button>
-                        );
-                      })}
-                    </div>
+
+                    {/* Fallback: odds não encontradas */}
+                    {isPlaceholderOdds && !hasRealOdds && !oddsLoading && (
+                      <div className="flex flex-col items-center gap-2 py-6 text-center bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-amber-500">
+                          <path d="M10 2.5L2.5 16.25h15L10 2.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+                          <path d="M10 8.75v3.125" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                          <circle cx="10" cy="13.75" r="0.625" fill="currentColor"/>
+                        </svg>
+                        <p className="text-sm font-semibold text-amber-600">Não foi possível encontrar as odds dessa partida.</p>
+                        <p className="text-xs text-muted-foreground">Tente novamente mais perto do início do jogo.</p>
+                      </div>
+                    )}
+
+                    {/* Odds reais ou não-placeholder */}
+                    {(!isPlaceholderOdds || hasRealOdds) && (
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { label: match.teamA, sub: "1", odd: realHomeOdd, active: realHomeOdd === Math.min(...realOdds) },
+                          { label: "Empate", sub: "X", odd: realDrawOdd, active: realDrawOdd === Math.min(...realOdds) },
+                          { label: match.teamB, sub: "2", odd: realAwayOdd, active: realAwayOdd === Math.min(...realOdds) },
+                        ].map((m, i) => {
+                          const betId = `${match.id}-odds-1x2-${m.sub}`;
+                          const sel = isSelected(betId);
+                          return (
+                            <button key={i} onClick={() => handleOdd(betId, m.label, m.odd)} className={`relative flex flex-col items-center gap-1.5 pt-4 pb-4 px-2 w-full rounded-xl transition-all border-2 ${sel ? "border-emerald-500 bg-emerald-500/10 shadow-sm shadow-emerald-500/20" : m.active ? "border-primary bg-primary/5 shadow-sm shadow-primary/10" : "border-border/30 bg-secondary/20 hover:border-primary/30 hover:bg-primary/5"}`}>
+                              {m.active && !sel && <div className="absolute top-1.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-primary bg-primary/15 px-2 py-0.5 rounded-full">Favorito</div>}
+                              {sel && <div className="absolute top-1.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded-full">No bilhete</div>}
+                              <span className={`text-[10px] font-medium truncate w-full text-center ${(m.active || sel) ? "mt-4" : ""} ${sel ? "text-emerald-400" : "text-muted-foreground"}`}>{m.label}</span>
+                              <span className={`text-2xl font-black tabular-nums ${sel ? "text-emerald-400" : m.active ? "text-primary" : "text-foreground"}`}>{m.odd.toFixed(2)}</span>
+                              <span className="text-[9px] text-muted-foreground tabular-nums">{Math.round((1 / m.odd) * 100)}%</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </SectionCard>
                 </RevealSection>
 
