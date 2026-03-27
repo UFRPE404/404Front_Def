@@ -385,6 +385,17 @@ export const volleyballMatches: MatchData[] = [
   },
 ];
 
+export interface TeamContext {
+  name: string;
+  recentResults: string[];
+  formString: string;
+  avgGoalsScored: number;
+  avgGoalsConceded: number;
+  winRate: number;
+  cleanSheets: number;
+  isHome: boolean;
+}
+
 export interface SuggestedBet {
   id: string;
   matchId: string;
@@ -397,6 +408,8 @@ export interface SuggestedBet {
   confidence?: "alta" | "media" | "baixa";
   reasoning?: string;
   type?: "best" | "dream";
+  homeContext?: TeamContext;
+  awayContext?: TeamContext;
 }
 
 export const dreamBets: SuggestedBet[] = [

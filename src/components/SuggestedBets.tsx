@@ -4,8 +4,8 @@ import SuggestedBetCard from "./SuggestedBetCard";
 import { useDreamBets, useBestOfDayBets } from "@/hooks/useSuggestedBets";
 
 const SuggestedBets = () => {
-  const { bets: dreamBets } = useDreamBets();
-  const { bets: bestOfDayBets } = useBestOfDayBets();
+  const { bets: dreamBets, loading: dreamLoading } = useDreamBets();
+  const { bets: bestOfDayBets, loading: bestLoading } = useBestOfDayBets();
   const dreamScrollRef = useRef<HTMLDivElement>(null);
   const bestScrollRef = useRef<HTMLDivElement>(null);
 
@@ -23,12 +23,14 @@ const SuggestedBets = () => {
     bets,
     scrollRef: ref,
     theme,
+    loading,
   }: {
     title: string;
     description: string;
     bets: typeof dreamBets;
     scrollRef: React.RefObject<HTMLDivElement>;
     theme: "dream" | "best";
+    loading: boolean;
   }) => (
     <section className="px-4 mt-8">
       <div className="mb-4">
@@ -59,19 +61,32 @@ const SuggestedBets = () => {
         className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory"
         style={{ scrollbarWidth: "none" }}
       >
-        {bets.map((bet, i) => (
-          <div
-            key={bet.id}
-            className="flex-shrink-0 w-[300px] snap-start animate-in fade-in slide-in-from-bottom-3"
-            style={{
-              animationDelay: `${i * 70}ms`,
-              animationFillMode: "both",
-              animationDuration: "500ms",
-            }}
-          >
-            <SuggestedBetCard {...bet} theme={theme} />
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={`skeleton-${i}`}
+              className="flex-shrink-0 w-[300px] h-[180px] rounded-xl bg-secondary/50 animate-pulse snap-start"
+            />
+          ))
+        ) : bets.length === 0 ? (
+          <div className="flex items-center justify-center w-full py-8 text-muted-foreground text-sm">
+            Nenhuma sugestão disponível no momento. Verifique se o servidor está rodando.
           </div>
-        ))}
+        ) : (
+          bets.map((bet, i) => (
+            <div
+              key={bet.id}
+              className="flex-shrink-0 w-[300px] snap-start animate-in fade-in slide-in-from-bottom-3"
+              style={{
+                animationDelay: `${i * 70}ms`,
+                animationFillMode: "both",
+                animationDuration: "500ms",
+              }}
+            >
+              <SuggestedBetCard {...bet} theme={theme} />
+            </div>
+          ))
+        )}
       </div>
     </section>
   );
@@ -84,6 +99,7 @@ const SuggestedBets = () => {
         bets={dreamBets}
         scrollRef={dreamScrollRef}
         theme="dream"
+        loading={dreamLoading}
       />
       <CarouselSection
         title="⭐ Melhores do Dia"
@@ -91,6 +107,7 @@ const SuggestedBets = () => {
         bets={bestOfDayBets}
         scrollRef={bestScrollRef}
         theme="best"
+        loading={bestLoading}
       />
     </div>
   );

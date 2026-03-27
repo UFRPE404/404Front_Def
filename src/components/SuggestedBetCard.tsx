@@ -9,7 +9,22 @@ interface SuggestedBetCardProps extends SuggestedBet {
   theme?: "dream" | "best";
 }
 
-const SuggestedBetCard = ({ id, teamA, teamB, league, pick, odds, probability, matchId, theme = "best" }: SuggestedBetCardProps) => {
+const confidenceColors: Record<string, { bg: string; text: string }> = {
+  alta: { bg: "bg-green-500/15", text: "text-green-500" },
+  media: { bg: "bg-yellow-500/15", text: "text-yellow-500" },
+  baixa: { bg: "bg-red-500/15", text: "text-red-500" },
+};
+
+const formColors: Record<string, string> = {
+  W: "bg-green-500",
+  D: "bg-yellow-500",
+  L: "bg-red-500",
+};
+
+const SuggestedBetCard = ({
+  id, teamA, teamB, league, pick, odds, probability, confidence,
+  reasoning, matchId, type, homeContext, awayContext, theme = "best",
+}: SuggestedBetCardProps) => {
   const { addSelection, isSelected } = useBetSlip();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const isAdded = isSelected(`${matchId}-${pick}`);
@@ -27,8 +42,16 @@ const SuggestedBetCard = ({ id, teamA, teamB, league, pick, odds, probability, m
   };
 
   const actualProbability = probability || Math.round((1 / odds) * 100);
+  const confStyle = confidence ? confidenceColors[confidence] : null;
 
-  const betData = { id, teamA, teamB, league, pick, odds, probability: actualProbability, matchId, theme };
+  const betData = {
+    id, teamA, teamB, league, pick, odds, probability: actualProbability,
+    confidence, reasoning, matchId, type, homeContext, awayContext, theme,
+  };
+
+  // Mini form dots (5 últimos jogos)
+  const homeForm = homeContext?.recentResults?.slice(0, 5) ?? [];
+  const awayForm = awayContext?.recentResults?.slice(0, 5) ?? [];
 
   return (
     <>
@@ -40,30 +63,58 @@ const SuggestedBetCard = ({ id, teamA, teamB, league, pick, odds, probability, m
         }}
         onClick={() => setIsModalOpen(true)}
       >
-        {/* Header com tema */}
+        {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-[11px] uppercase font-bold tracking-wider text-primary mb-0.5">
-              {theme === "dream" ? "💰 Para Sonhar" : "⭐ Melhores"}
+              {theme === "dream" ? "Para Sonhar" : "Melhores"}
             </p>
             <p className="text-xs text-muted-foreground">{league}</p>
           </div>
+          {confStyle && confidence && (
+            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${confStyle.bg} ${confStyle.text}`}>
+              {confidence}
+            </span>
+          )}
         </div>
 
-        {/* Confronto */}
+        {/* Times com forma */}
         <div className="space-y-1.5 mb-3">
-          <div className="text-sm font-semibold text-foreground">{teamA}</div>
-          <div className="text-xs text-muted-foreground px-2 py-1 bg-secondary rounded w-fit">vs</div>
-          <div className="text-sm font-semibold text-foreground">{teamB}</div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-foreground">{teamA}</span>
+            {homeForm.length > 0 && (
+              <div className="flex gap-0.5">
+                {homeForm.map((r, i) => (
+                  <div key={i} className={`w-2 h-2 rounded-full ${formColors[r] || "bg-muted"}`} />
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="text-xs text-muted-foreground px-2 py-0.5 bg-secondary rounded w-fit">vs</div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-foreground">{teamB}</span>
+            {awayForm.length > 0 && (
+              <div className="flex gap-0.5">
+                {awayForm.map((r, i) => (
+                  <div key={i} className={`w-2 h-2 rounded-full ${formColors[r] || "bg-muted"}`} />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Pick */}
         <div className="mb-3 p-2.5 rounded-lg" style={{ background: "hsl(var(--surface-elevated))" }}>
-          <div className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Sua aposta</div>
+          <div className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Aposta</div>
           <p className="text-sm font-semibold text-primary">{pick}</p>
         </div>
 
-        {/* Stats: Odd e Probabilidade */}
+        {/* Reasoning preview */}
+        {reasoning && (
+          <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{reasoning}</p>
+        )}
+
+        {/* Odds + Probabilidade */}
         <div className="grid grid-cols-2 gap-2 mb-3">
           <div className="p-2 rounded-lg border" style={{ borderColor: "hsl(var(--border))" }}>
             <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Odd</p>
@@ -75,7 +126,7 @@ const SuggestedBetCard = ({ id, teamA, teamB, league, pick, odds, probability, m
           </div>
         </div>
 
-        {/* Botão Adicionar */}
+        {/* Botão */}
         <Button
           onClick={handleAddBet}
           variant={isAdded ? "outline" : "hero"}
@@ -83,7 +134,7 @@ const SuggestedBetCard = ({ id, teamA, teamB, league, pick, odds, probability, m
           className="w-full text-sm font-semibold"
         >
           <Plus className="w-3.5 h-3.5 mr-1.5" />
-          {isAdded ? "Adicionado ✓" : "Adicionar ao Bilhete"}
+          {isAdded ? "Adicionado" : "Adicionar ao Bilhete"}
         </Button>
       </div>
 

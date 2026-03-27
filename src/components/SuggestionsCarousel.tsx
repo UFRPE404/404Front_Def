@@ -2,14 +2,11 @@ import { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import SuggestedBetCard from "./SuggestedBetCard";
 import { useAllSuggestedBets } from "@/hooks/useSuggestedBets";
-import { dreamBets } from "@/data/matches";
 
 const SuggestionsCarousel = () => {
-  const { bets } = useAllSuggestedBets();
+  const { bets, loading } = useAllSuggestedBets();
   const scrollRef = useRef<HTMLDivElement>(null);
   const animRef = useRef<number | null>(null);
-
-  const dreamIds = new Set(dreamBets.map((b) => b.id));
 
   const scroll = (dir: "left" | "right") => {
     if (!scrollRef.current) return;
@@ -53,22 +50,35 @@ const SuggestionsCarousel = () => {
         className="flex gap-3 overflow-x-auto pb-2"
         style={{ scrollbarWidth: "none" }}
       >
-        {bets.map((bet, i) => (
-          <div
-            key={bet.id}
-            className="flex-shrink-0 w-[280px] animate-in fade-in slide-in-from-bottom-3"
-            style={{
-              animationDelay: `${i * 70}ms`,
-              animationFillMode: "both",
-              animationDuration: "500ms",
-            }}
-          >
-            <SuggestedBetCard
-              {...bet}
-              theme={dreamIds.has(bet.id) ? "dream" : "best"}
+        {loading ? (
+          Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={`skeleton-${i}`}
+              className="flex-shrink-0 w-[280px] h-[160px] rounded-xl bg-secondary/50 animate-pulse"
             />
+          ))
+        ) : bets.length === 0 ? (
+          <div className="flex items-center justify-center w-full py-6 text-muted-foreground text-sm">
+            Nenhuma sugestão disponível no momento.
           </div>
-        ))}
+        ) : (
+          bets.map((bet, i) => (
+            <div
+              key={bet.id}
+              className="flex-shrink-0 w-[280px] animate-in fade-in slide-in-from-bottom-3"
+              style={{
+                animationDelay: `${i * 70}ms`,
+                animationFillMode: "both",
+                animationDuration: "500ms",
+              }}
+            >
+              <SuggestedBetCard
+                {...bet}
+                theme={bet.type === "dream" ? "dream" : "best"}
+              />
+            </div>
+          ))
+        )}
       </div>
     </section>
   );
