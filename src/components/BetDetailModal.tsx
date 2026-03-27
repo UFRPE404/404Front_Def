@@ -1,4 +1,4 @@
-import { TrendingUp, Percent, AlertCircle, Shield, Swords } from "lucide-react";
+import { TrendingUp, Percent, AlertCircle, Shield, Swords, Calendar } from "lucide-react";
 import { SuggestedBet, TeamContext } from "@/data/matches";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -71,6 +71,24 @@ const TeamStats = ({ ctx, label }: { ctx: TeamContext; label: string }) => (
   </div>
 );
 
+function formatMatchDate(matchDate: string): string {
+  const [datePart, timePart] = matchDate.split(", ");
+  if (!datePart || !timePart) return matchDate;
+  const [day, month, year] = datePart.split("/").map(Number);
+  const [hour, minute] = timePart.split(":").map(Number);
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const isToday =
+    today.getDate() === day && today.getMonth() + 1 === month && today.getFullYear() === year;
+  const isTomorrow =
+    tomorrow.getDate() === day && tomorrow.getMonth() + 1 === month && tomorrow.getFullYear() === year;
+  const time = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  if (isToday) return `Jogo hoje às ${time}h`;
+  if (isTomorrow) return `Jogo amanhã às ${time}h`;
+  return `Jogo ${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")} às ${time}h`;
+}
+
 const BetDetailModal = ({ bet, isOpen, onClose }: BetDetailModalProps) => {
   const { addSelection, isSelected } = useBetSlip();
 
@@ -113,7 +131,16 @@ const BetDetailModal = ({ bet, isOpen, onClose }: BetDetailModalProps) => {
           )}
         </div>
 
-        <h2 className="text-lg font-bold text-foreground mb-4">{bet.league}</h2>
+        <h2 className="text-lg font-bold text-foreground mb-3">{bet.league}</h2>
+
+        {bet.matchDate && (
+          <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 w-fit">
+            <Calendar className="w-4 h-4 text-primary shrink-0" />
+            <span className="text-sm font-semibold text-primary">
+              {formatMatchDate(bet.matchDate)}
+            </span>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-6">
           {/* Left Column */}

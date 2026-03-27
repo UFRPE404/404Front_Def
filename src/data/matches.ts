@@ -408,6 +408,7 @@ export interface SuggestedBet {
   confidence?: "alta" | "media" | "baixa";
   reasoning?: string;
   type?: "best" | "dream";
+  matchDate?: string;
   homeContext?: TeamContext;
   awayContext?: TeamContext;
 }

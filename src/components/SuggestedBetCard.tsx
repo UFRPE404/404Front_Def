@@ -1,9 +1,27 @@
-import { Plus } from "lucide-react";
+import { Plus, Clock } from "lucide-react";
 import { useState } from "react";
 import { useBetSlip } from "@/contexts/BetSlipContext";
 import { SuggestedBet } from "@/data/matches";
 import { Button } from "@/components/ui/button";
 import BetDetailModal from "./BetDetailModal";
+
+function formatMatchTime(matchDate: string): string {
+  const [datePart, timePart] = matchDate.split(", ");
+  if (!datePart || !timePart) return matchDate;
+  const [day, month, year] = datePart.split("/").map(Number);
+  const [hour, minute] = timePart.split(":").map(Number);
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const isToday =
+    today.getDate() === day && today.getMonth() + 1 === month && today.getFullYear() === year;
+  const isTomorrow =
+    tomorrow.getDate() === day && tomorrow.getMonth() + 1 === month && tomorrow.getFullYear() === year;
+  const time = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  if (isToday) return `Hoje às ${time}h`;
+  if (isTomorrow) return `Amanhã às ${time}h`;
+  return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")} às ${time}h`;
+}
 
 interface SuggestedBetCardProps extends SuggestedBet {
   theme?: "dream" | "best";
@@ -23,7 +41,7 @@ const formColors: Record<string, string> = {
 
 const SuggestedBetCard = ({
   id, teamA, teamB, league, pick, odds, probability, confidence,
-  reasoning, matchId, type, homeContext, awayContext, theme = "best",
+  reasoning, matchId, type, matchDate, homeContext, awayContext, theme = "best",
 }: SuggestedBetCardProps) => {
   const { addSelection, isSelected } = useBetSlip();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,7 +64,7 @@ const SuggestedBetCard = ({
 
   const betData = {
     id, teamA, teamB, league, pick, odds, probability: actualProbability,
-    confidence, reasoning, matchId, type, homeContext, awayContext, theme,
+    confidence, reasoning, matchId, type, matchDate, homeContext, awayContext, theme,
   };
 
   // Mini form dots (5 últimos jogos)
@@ -70,6 +88,12 @@ const SuggestedBetCard = ({
               {theme === "dream" ? "Para Sonhar" : "Melhores"}
             </p>
             <p className="text-xs text-muted-foreground">{league}</p>
+            {matchDate && (
+              <div className="flex items-center gap-1 mt-0.5">
+                <Clock className="w-3 h-3 text-muted-foreground" />
+                <p className="text-[11px] text-muted-foreground">{formatMatchTime(matchDate)}</p>
+              </div>
+            )}
           </div>
           {confStyle && confidence && (
             <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${confStyle.bg} ${confStyle.text}`}>
