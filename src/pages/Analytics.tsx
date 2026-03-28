@@ -13,7 +13,7 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import type { MatchData } from "@/data/matches";
-import { getMatchById, getMatchLineups, getFullOddsForMatch, getMatchH2H, getMatchHistoric, getMatchLiveStats, type FullOddsData, type H2HApiData, type MatchHistoricData, type MatchLiveStats } from "@/services/matchesService";
+import { getMatchById, getMatchLineups, getMatchEvents, getFullOddsForMatch, getMatchH2H, getMatchHistoric, getMatchLiveStats, type FullOddsData, type H2HApiData, type MatchHistoricData, type MatchLiveStats } from "@/services/matchesService";
 import { getMatchDetails, type Player, type MatchEvent } from "@/data/matchDetails";
 import { StatBar } from "@/components/StatBars";
 import { FootballStatsView, BasketballStatsView, TennisStatsView, VolleyballStatsView } from "@/components/SportStatsViews";
@@ -379,6 +379,7 @@ const Analytics = () => {
   const [loading, setLoading] = useState(true);
   const [apiLineup, setApiLineup] = useState<any>(null);
   const [lineupLoading, setLineupLoading] = useState(false);
+  const [apiEvents, setApiEvents] = useState<MatchEvent[] | null>(null);
   const [fullOdds, setFullOdds] = useState<FullOddsData | null>(null);
   const [h2hApiData, setH2hApiData] = useState<H2HApiData | null>(null);
   const [historicData, setHistoricData] = useState<MatchHistoricData | null>(null);
@@ -421,6 +422,19 @@ const Analytics = () => {
       .catch(() => setApiLineup(null))
       .finally(() => setLineupLoading(false));
   }, [match?.id]);
+
+  // Fetch match events from event/view; poll every 30s for live matches
+  useEffect(() => {
+    if (!match?.id) return;
+    const fetchEvents = () =>
+      getMatchEvents(match.id).then(res => {
+        if (res?.events) setApiEvents(res.events);
+      }).catch(() => {});
+    fetchEvents();
+    if (!match.live) return;
+    const interval = setInterval(fetchEvents, 30_000);
+    return () => clearInterval(interval);
+  }, [match?.id, match?.live]);
 
   // Fetch real odds and H2H from backend
   useEffect(() => {
@@ -649,9 +663,9 @@ const Analytics = () => {
                   <SectionCard>
                     <SectionTitle icon={Clock}>Eventos da Partida</SectionTitle>
                     <div className="space-y-0">
-                      {details.events.length === 0 ? (
+                      {(apiEvents ?? details.events).length === 0 ? (
                         <p className="text-sm text-muted-foreground py-4 text-center">Aguardando inicio da partida...</p>
-                      ) : details.events.map((ev, i) => (
+                      ) : (apiEvents ?? details.events).map((ev, i) => (
                         <div key={i} className={`flex items-center gap-3 py-2.5 ${i > 0 ? "border-t border-border/30" : ""}`}>
                           {ev.team === "home" ? (
                             <><span className="text-sm text-foreground flex-1 text-right truncate">{ev.player}</span><EventIcon type={ev.type} /><span className="text-xs font-mono text-muted-foreground w-10 text-center tabular-nums">{ev.minute}'</span><div className="flex-1" /></>
