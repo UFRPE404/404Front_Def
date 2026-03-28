@@ -1,16 +1,17 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import MatchCard from "./MatchCard";
 import { useMatches, useLiveMatches, useMatchesBySport } from "@/hooks/useMatchesData";
 import { getFeaturedMatches } from "@/utils/matchPriority";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 
 interface FeaturedMatchesProps {
   sport: string;
 }
 
 const FeaturedMatches = ({ sport }: FeaturedMatchesProps) => {
-  const { matches: allMatches, loading: loadingAll } = useMatches();
+  const [refreshing, setRefreshing] = useState(false);
+  const { matches: allMatches, loading: loadingAll, refetch } = useMatches();
   const { matches: liveMatchesList } = useLiveMatches();
   const { matches: sportMatches, loading: loadingSport } = useMatchesBySport(
     sport !== "Futebol" && sport !== "Ao Vivo" ? sport : null
@@ -62,7 +63,19 @@ const FeaturedMatches = ({ sport }: FeaturedMatchesProps) => {
           </div>
         </div>
       ) : matches.length === 0 ? (
-        <p className="text-sm text-muted-foreground px-1">Nenhum jogo disponível para este esporte.</p>
+        <div className="flex flex-col items-center justify-center py-10 gap-3">
+          <p className="text-sm text-muted-foreground">Nenhum jogo disponível para este esporte.</p>
+          {sport === "Futebol" && (
+            <button
+              onClick={() => { setRefreshing(true); refetch(); setTimeout(() => setRefreshing(false), 3000); }}
+              disabled={refreshing}
+              className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+              {refreshing ? "Atualizando..." : "Tentar novamente"}
+            </button>
+          )}
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {matches.map((match, i) => (

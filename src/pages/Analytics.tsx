@@ -1395,14 +1395,20 @@ const Analytics = () => {
                         {(selectedTeam === "home" ? homeLastMatches : awayLastMatches).length === 0 && (
                           <p className="text-xs text-muted-foreground text-center py-4">Sem jogos recentes</p>
                         )}
-                        {(selectedTeam === "home" ? homeLastMatches : awayLastMatches).map((r, i) => (
+                        {(selectedTeam === "home" ? homeLastMatches : awayLastMatches).map((r, i) => {
+                          const perspectiveTeam = selectedTeam === "home" ? match.teamA : match.teamB;
+                          const normalize = (s: string) => s.toLowerCase().trim();
+                          const teamIsHome = normalize(r.home) === normalize(perspectiveTeam);
+                          const teamWon = r.winner !== "draw" && (teamIsHome ? r.winner === "home" : r.winner === "away");
+                          const teamLost = r.winner !== "draw" && !teamWon;
+                          return (
                           <div key={i} className="relative rounded-xl overflow-hidden border border-border/20 hover:border-primary/20 transition-all">
-                            <div className={`absolute inset-y-0 left-0 w-1 ${r.winner === "home" ? "bg-emerald-500" : r.winner === "away" ? "bg-red-500" : "bg-muted-foreground/40"}`} />
+                            <div className={`absolute inset-y-0 left-0 w-1 ${teamWon ? "bg-emerald-500" : teamLost ? "bg-red-500" : "bg-muted-foreground/40"}`} />
                             <div className="flex items-center gap-3 p-3 pl-4">
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <span className={`text-[10px] font-black px-2 py-0.5 rounded ${r.winner === "home" ? "bg-emerald-500/10 text-emerald-400" : r.winner === "away" ? "bg-red-500/10 text-red-400" : "bg-muted text-muted-foreground"}`}>
-                                    {r.winner === "home" ? "VIT" : r.winner === "away" ? "DER" : "EMP"}
+                                  <span className={`text-[10px] font-black px-2 py-0.5 rounded ${teamWon ? "bg-emerald-500/10 text-emerald-400" : teamLost ? "bg-red-500/10 text-red-400" : "bg-muted text-muted-foreground"}`}>
+                                    {teamWon ? "VIT" : teamLost ? "DER" : "EMP"}
                                   </span>
                                   <span className="text-[10px] text-muted-foreground tabular-nums">{r.date}</span>
                                   {r.league && <span className="text-[9px] text-muted-foreground/60 ml-auto truncate max-w-[120px]">{r.league}</span>}
@@ -1415,7 +1421,8 @@ const Analytics = () => {
                               </div>
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </SectionCard>
                   </RevealSection>

@@ -7,6 +7,7 @@ export interface UseMatchesResult {
   matches: MatchData[];
   loading: boolean;
   error: Error | null;
+  refetch: () => void;
 }
 
 /**
@@ -17,6 +18,12 @@ export function useMatches(): UseMatchesResult {
   const [matches, setMatches] = useState<MatchData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [tick, setTick] = useState(0);
+
+  const refetch = useCallback(() => {
+    setMatches([]);
+    setTick((t) => t + 1);
+  }, []);
 
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -31,6 +38,7 @@ export function useMatches(): UseMatchesResult {
   }, []);
 
   useEffect(() => {
+    if (pollRef.current) clearTimeout(pollRef.current);
     setLoading(true);
     setError(null);
     matchesService
@@ -48,9 +56,9 @@ export function useMatches(): UseMatchesResult {
     return () => {
       if (pollRef.current) clearTimeout(pollRef.current);
     };
-  }, [poll]);
+  }, [poll, tick]);
 
-  return { matches, loading, error };
+  return { matches, loading, error, refetch };
 }
 
 /**
@@ -71,7 +79,7 @@ export function useCarouselMatches(): UseMatchesResult {
       .finally(() => setLoading(false));
   }, []);
 
-  return { matches, loading, error };
+  return { matches, loading, error, refetch: () => {} };
 }
 
 /**
@@ -92,7 +100,7 @@ export function useFeaturedMatches(): UseMatchesResult {
       .finally(() => setLoading(false));
   }, []);
 
-  return { matches, loading, error };
+  return { matches, loading, error, refetch: () => {} };
 }
 
 /**
@@ -122,7 +130,7 @@ export function useLiveMatches(intervalMs = 10_000): UseMatchesResult {
     return () => { cancelled = true; clearInterval(id); };
   }, [intervalMs]);
 
-  return { matches, loading, error };
+  return { matches, loading, error, refetch: () => {} };
 }
 
 /**
@@ -152,7 +160,7 @@ export function useMatchesBySport(sport: string | null): UseMatchesResult {
     return () => { cancelled = true; };
   }, [sport]);
 
-  return { matches, loading, error };
+  return { matches, loading, error, refetch: () => {} };
 }
 
 /**
@@ -175,7 +183,7 @@ export function useMatchesByLeague(league: string | null): UseMatchesResult {
       .finally(() => setLoading(false));
   }, [league]);
 
-  return { matches, loading, error };
+  return { matches, loading, error, refetch: () => {} };
 }
 
 /**

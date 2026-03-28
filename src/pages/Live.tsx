@@ -9,9 +9,8 @@ import { useLiveMatches } from "@/hooks/useMatchesData";
 import { generateMatchAnalysis } from "@/utils/matchAnalysis";
 import { useBetSlip } from "@/contexts/BetSlipContext";
 import { getMatchLiveStats, getMatchOdds, type MatchLiveStats } from "@/services/matchesService";
-import { ChevronLeft, ChevronRight, Trophy, Dumbbell, Target, Volleyball, Gamepad2, Zap, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trophy, Dumbbell, Target, Volleyball, Gamepad2, Zap, Sparkles, Flame, Star } from "lucide-react";
 import { getFeaturedMatches, getMatchTier } from "@/utils/matchPriority";
-import {Flame, Star} from "lucide-react";
 
 /* ── helpers ───────────────────────────────────── */
 

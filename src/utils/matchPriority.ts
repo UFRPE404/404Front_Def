@@ -182,6 +182,10 @@ const TIER2_LEAGUES = new Set<string>([
   "torneo binance",
   "torneo apertura",
   "torneo clausura",
+  "copa argentina",
+  "argentina cup",
+  "primera division",
+  "argentina primera division",
 
   // Brazil Série B
   "brasileirão série b",
@@ -266,9 +270,9 @@ export function getMatchTier(match: MatchData): 1 | 2 | 3 {
  */
 export function getFeaturedMatches<T extends MatchData>(matches: T[]): T[] {
   const tier1 = matches.filter((m) => getMatchTier(m) === 1);
-  if (tier1.length >= 2) return tier1.slice(0, 10);
+  if (tier1.length >= 1) return tier1.slice(0, 10);
 
   const tier2 = matches.filter((m) => getMatchTier(m) === 2);
   const combined = [...tier1, ...tier2];
-  return combined.length >= 2 ? combined.slice(0, 8) : [];
+  return combined.length >= 1 ? combined.slice(0, 8) : [];
 }

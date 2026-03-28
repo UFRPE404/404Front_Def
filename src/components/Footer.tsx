@@ -1,5 +1,5 @@
 
-import futDataLogo from "@/assets/png_fut_data.png";
+
 
 const Footer = () => {
   return (
@@ -7,7 +7,7 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex flex-col items-center gap-3">
           <img
-            src={futDataLogo}
+            src="/FutDataLogo.svg"
             alt="FutData Logo"
             className="w-24 h-24 object-contain rounded shadow-lg"
             style={{ background: "#ffffff00" }}

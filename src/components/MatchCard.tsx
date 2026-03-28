@@ -254,8 +254,19 @@ const MatchCard = ({
 
   // H2H derived data
   const h2hMatches = h2hData?.h2h ?? [];
-  const homeForm: FormResult[] = (h2hData?.homeLastMatches ?? []).slice(0, 5).map(m => m.winner === 'home' ? 'V' : m.winner === 'draw' ? 'E' : 'D');
-  const awayForm: FormResult[] = (h2hData?.awayLastMatches ?? []).slice(0, 5).map(m => m.winner === 'home' ? 'V' : m.winner === 'draw' ? 'E' : 'D');
+  const normalize = (s: string) => s.toLowerCase().trim();
+  const homeForm: FormResult[] = (h2hData?.homeLastMatches ?? []).slice(0, 5).map(m => {
+    if (m.winner === 'draw') return 'E';
+    const teamIsHome = normalize(m.home) === normalize(teamA);
+    const teamWon = teamIsHome ? m.winner === 'home' : m.winner === 'away';
+    return teamWon ? 'V' : 'D';
+  });
+  const awayForm: FormResult[] = (h2hData?.awayLastMatches ?? []).slice(0, 5).map(m => {
+    if (m.winner === 'draw') return 'E';
+    const teamIsHome = normalize(m.home) === normalize(teamB);
+    const teamWon = teamIsHome ? m.winner === 'home' : m.winner === 'away';
+    return teamWon ? 'V' : 'D';
+  });
   // AI insight sentence
   const aiInsight = useMemo(() => {
     if (live && !liveStats) return null;
@@ -417,9 +428,9 @@ const MatchCard = ({
                           Últimas 5 partidas
                         </span>
                         <div className="flex items-center gap-2 w-full">
-                          <FormSquares form={homeForm.length ? homeForm : ['E','E','E','E','E']} />
+                          <FormSquares form={homeForm.length ? [...homeForm].reverse() : ['E','E','E','E','E']} />
                           <span className="text-[9px] uppercase font-bold text-muted-foreground/50 tracking-widest shrink-0">FORM</span>
-                          <FormSquares form={awayForm.length ? [...awayForm].reverse() : ['E','E','E','E','E']} />
+                          <FormSquares form={awayForm.length ? awayForm : ['E','E','E','E','E']} />
                         </div>
                       </div>
                     )}

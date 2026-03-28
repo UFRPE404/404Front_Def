@@ -1,7 +1,7 @@
 import { Search, Menu, X, Zap, Calendar, Trophy, Layers } from "lucide-react";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import futDataLogo from "@/assets/png_fut_data.png";
+
 import { useMatches, useLiveMatches } from "@/hooks/useMatchesData";
 
 const Navbar = () => {
@@ -82,7 +82,7 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <img
-              src={futDataLogo}
+              src="/FutDataLogo.svg"
               alt="FutData Logo"
               className="w-24 h-24 object-contain drop-shadow-md"
             />
