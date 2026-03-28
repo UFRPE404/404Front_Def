@@ -378,6 +378,7 @@ const Analytics = () => {
   const [match, setMatch] = useState<MatchData | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [apiLineup, setApiLineup] = useState<any>(null);
+  const [lineupLoading, setLineupLoading] = useState(false);
   const [fullOdds, setFullOdds] = useState<FullOddsData | null>(null);
   const [h2hApiData, setH2hApiData] = useState<H2HApiData | null>(null);
   const [historicData, setHistoricData] = useState<MatchHistoricData | null>(null);
@@ -410,13 +411,16 @@ const Analytics = () => {
     return () => clearInterval(interval);
   }, [match?.live, matchId]);
 
-  // Fetch real lineup for live/API matches
+  // Fetch real lineup for all matches (live and pre-match)
   useEffect(() => {
-    if (!match?.live || !match?.id) return;
+    if (!match?.id) return;
+    setLineupLoading(true);
+    setApiLineup(null);
     getMatchLineups(match.id)
       .then(setApiLineup)
-      .catch(() => setApiLineup(null));
-  }, [match?.id, match?.live]);
+      .catch(() => setApiLineup(null))
+      .finally(() => setLineupLoading(false));
+  }, [match?.id]);
 
   // Fetch real odds and H2H from backend
   useEffect(() => {
@@ -1051,25 +1055,38 @@ const Analytics = () => {
         {/* ====== TAB: ESCALACOES ====== */}
         {activeTab === "escalacoes" && (match?.sport === "Futebol" || match?.sport === "Volei" || !match?.sport) && (
           <div className="space-y-5">
-            {!match.live && !apiLineup && (
+            {lineupLoading && (
+              <div className="flex flex-col items-center py-12 gap-3">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <p className="text-xs text-muted-foreground">A carregar escalação...</p>
+              </div>
+            )}
+            {!lineupLoading && apiLineup && (
               <RevealSection>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium w-fit bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"><AlertTriangle className="w-3.5 h-3.5" /> Escalacao estimada</div>
+                {(apiLineup.homeFallback || apiLineup.awayFallback) ? (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium w-fit bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+                    <AlertTriangle className="w-3.5 h-3.5" /> Elenco atual — escalação oficial ainda não anunciada
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium w-fit bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {match.live ? "Escalação oficial (ao vivo)" : "Escalação oficial"}
+                  </div>
+                )}
               </RevealSection>
             )}
-            {match.live && apiLineup && (
-              <RevealSection>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium w-fit bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><CheckCircle2 className="w-3.5 h-3.5" /> Escalação oficial (ao vivo)</div>
-              </RevealSection>
-            )}
-            {/* Real API lineup section for live matches */}
-            {apiLineup && (
+            {/* Real API lineup section */}
+            {!lineupLoading && apiLineup && (
               <RevealSection delay={20}>
                 <div className="flex gap-1.5 p-1 rounded-xl bg-secondary/40 mb-4">
                   <button onClick={() => setSelectedTeam("home")} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${selectedTeam === "home" ? "bg-card text-foreground shadow-sm border border-border/50" : "text-muted-foreground hover:text-foreground"}`}>{match.teamA}</button>
                   <button onClick={() => setSelectedTeam("away")} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${selectedTeam === "away" ? "bg-card text-foreground shadow-sm border border-border/50" : "text-muted-foreground hover:text-foreground"}`}>{match.teamB}</button>
                 </div>
                 <SectionCard>
-                  <SectionTitle icon={Shirt}>Escalação Oficial</SectionTitle>
+                  <SectionTitle icon={Shirt}>
+                    {selectedTeam === "home"
+                      ? (apiLineup.homeFallback ? "Elenco Registrado" : "Escalação Oficial")
+                      : (apiLineup.awayFallback ? "Elenco Registrado" : "Escalação Oficial")}
+                  </SectionTitle>
                   {(() => {
                     const teamData = selectedTeam === "home" ? apiLineup.home : apiLineup.away;
                     if (!teamData) return <p className="text-sm text-muted-foreground py-4 text-center">Escalação não disponível para este time.</p>;
@@ -1079,7 +1096,7 @@ const Analytics = () => {
                       <div className="space-y-4">
                         {players.length > 0 && (
                           <div>
-                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Titulares ({players.length})</h3>
+                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{(selectedTeam === "home" ? apiLineup.homeFallback : apiLineup.awayFallback) ? `Elenco (${players.length})` : `Titulares (${players.length})`}</h3>
                             <div className="space-y-1">
                               {players.map((p: any, i: number) => (
                                 <div key={p.id || i} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-secondary/30 transition-colors">
@@ -1121,143 +1138,15 @@ const Analytics = () => {
                 </SectionCard>
               </RevealSection>
             )}
-            {/* Fallback to mock lineup when API lineup is not available */}
-            {!apiLineup && (
-              <>
-            <RevealSection delay={20}>
-              <div className="flex gap-1.5 p-1 rounded-xl bg-secondary/40">
-                <button onClick={() => setSelectedTeam("home")} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${selectedTeam === "home" ? "bg-card text-foreground shadow-sm border border-border/50" : "text-muted-foreground hover:text-foreground"}`}>{match.teamA} {(!match.sport || match.sport === "Futebol") && details.homeLineup.formation ? `(${details.homeLineup.formation})` : ""}</button>
-                <button onClick={() => setSelectedTeam("away")} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${selectedTeam === "away" ? "bg-card text-foreground shadow-sm border border-border/50" : "text-muted-foreground hover:text-foreground"}`}>{match.teamB} {(!match.sport || match.sport === "Futebol") && details.awayLineup.formation ? `(${details.awayLineup.formation})` : ""}</button>
-              </div>
-            </RevealSection>
-            {(() => {
-              const lineup = selectedTeam === "home" ? details.homeLineup : details.awayLineup;
-              return (!match.sport || match.sport === "Futebol") ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                  <RevealSection delay={40}>
-                    <SectionCard>
-                      <div className="flex items-center justify-between mb-3">
-                        <h2 className="text-sm font-semibold text-foreground">Formacao {lineup.formation}</h2>
-                        <span className="text-[10px] text-muted-foreground flex items-center gap-1"><User className="w-3 h-3" /> {lineup.coach}</span>
-                      </div>
-                      <div className="relative w-full rounded-xl overflow-hidden" style={{ background: "linear-gradient(180deg, hsl(148, 55%, 16%) 0%, hsl(148, 50%, 20%) 50%, hsl(148, 55%, 16%) 100%)", paddingTop: "125%" }}>
-                        <div className="absolute inset-0 p-3 pb-6">
-                          {/* Field markings */}
-                          <div className="absolute inset-4 border-2 border-white/20 rounded-lg">
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-36 h-14 border-2 border-white/20 border-t-0 rounded-b-lg" />
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-6 border-2 border-white/20 border-t-0 rounded-b" />
-                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-36 h-14 border-2 border-white/20 border-b-0 rounded-t-lg" />
-                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-6 border-2 border-white/20 border-b-0 rounded-t" />
-                            <div className="absolute top-1/2 left-0 right-0 border-t-2 border-white/20" />
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border-2 border-white/20 rounded-full" />
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white/30 rounded-full" />
-                          </div>
-                          {/* Player positions */}
-                          {(() => {
-                            const formationLines = lineup.formation.split("-").map(Number);
-                            const rows: Player[][] = [];
-                            let idx = 0;
-                            rows.push([lineup.players[idx++]]);
-                            for (const count of formationLines) { rows.push(lineup.players.slice(idx, idx + count)); idx += count; }
-                            const totalRows = rows.length;
-                            return rows.map((row, rowIdx) => {
-                              const yPercent = 6 + (rowIdx / (totalRows - 1)) * 84;
-                              return (
-                                <div key={rowIdx} className="absolute left-0 right-0 flex justify-center" style={{ top: `${yPercent}%` }}>
-                                  {row.map((p, pIdx) => {
-                                    const total = row.length;
-                                    const xOffset = total === 1 ? 50 : 12 + (pIdx / (total - 1)) * 76;
-                                    const isGk = rowIdx === 0;
-                                    const ratingVal = p.rating;
-                                    const ratingColor = ratingVal >= 7.5 ? "bg-emerald-500" : ratingVal >= 6.5 ? "bg-amber-500" : "bg-red-500";
-                                    return (
-                                      <div key={pIdx} className="flex flex-col items-center group" style={{ position: "absolute", left: `${xOffset}%`, transform: "translateX(-50%)" }}>
-                                        <div className={`relative w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-transform group-hover:scale-110 ${isGk ? "bg-amber-500 text-black" : "bg-primary text-primary-foreground"}`}>
-                                          {p.number}
-                                          <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-black text-white ${ratingColor} shadow-sm border border-black/20`}>{p.rating}</div>
-                                        </div>
-                                        <span className="text-[9px] font-bold text-white mt-1 text-center leading-tight max-w-[80px] truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{p.name.split(" ").pop()}</span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              );
-                            });
-                          })()}
-                        </div>
-                      </div>
-                    </SectionCard>
-                  </RevealSection>
-                  <div className="space-y-4">
-                    <RevealSection delay={80}>
-                      <SectionCard>
-                        <h3 className="text-xs font-semibold text-foreground flex items-center gap-2 mb-3"><Shirt className="w-3.5 h-3.5 text-primary" /> Titulares <span className="text-[10px] text-muted-foreground ml-auto">{lineup.players.length} jogadores</span></h3>
-                        <div className="space-y-1">
-                          {lineup.players.map((p, i) => {
-                            const ratingVal = p.rating;
-                            const ratingColor = ratingVal >= 7.5 ? "text-emerald-400 bg-emerald-500/10" : ratingVal >= 6.5 ? "text-amber-400 bg-amber-500/10" : "text-red-400 bg-red-500/10";
-                            return (
-                              <div key={i} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-secondary/30 transition-colors group">
-                                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${i === 0 ? "bg-amber-500/20 text-amber-400" : "bg-primary/10 text-primary"}`}>{p.number}</div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
-                                  <p className="text-[10px] text-muted-foreground">{p.position} {p.age ? `- ${p.age} anos` : ""}</p>
-                                </div>
-                                <span className={`text-xs font-black tabular-nums px-2 py-0.5 rounded-md ${ratingColor}`}>{p.rating}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </SectionCard>
-                    </RevealSection>
-                    <RevealSection delay={120}>
-                      <SectionCard>
-                        <h3 className="text-xs font-semibold text-foreground flex items-center gap-2 mb-3"><ArrowRightLeft className="w-3.5 h-3.5 text-muted-foreground" /> Reservas <span className="text-[10px] text-muted-foreground ml-auto">{lineup.substitutes.length} jogadores</span></h3>
-                        <div className="space-y-1">
-                          {lineup.substitutes.map((p, i) => {
-                            const ratingVal = p.rating;
-                            const ratingColor = ratingVal >= 7.5 ? "text-emerald-400 bg-emerald-500/10" : ratingVal >= 6.5 ? "text-amber-400 bg-amber-500/10" : "text-red-400 bg-red-500/10";
-                            return (
-                              <div key={i} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-secondary/30 transition-colors">
-                                <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 bg-secondary/60 text-muted-foreground">{p.number}</div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
-                                  <p className="text-[10px] text-muted-foreground">{p.position} {p.age ? `- ${p.age} anos` : ""}</p>
-                                </div>
-                                <span className={`text-xs font-black tabular-nums px-2 py-0.5 rounded-md ${ratingColor}`}>{p.rating}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </SectionCard>
-                    </RevealSection>
-                  </div>
+            {/* Escalação indisponível */}
+            {!lineupLoading && !apiLineup && (
+              <RevealSection>
+                <div className="flex flex-col items-center py-16 gap-3">
+                  <Shirt className="w-10 h-10 text-muted-foreground/30" />
+                  <p className="text-sm font-semibold text-muted-foreground">Escalação indisponível</p>
+                  <p className="text-xs text-muted-foreground/60 text-center max-w-xs">A escalação desta partida ainda não foi divulgada ou não está disponível neste momento.</p>
                 </div>
-              ) : (
-                <RevealSection delay={40}>
-                  <SectionCard>
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-sm font-semibold text-foreground">Escalacao</h2>
-                      <span className="text-[10px] text-muted-foreground flex items-center gap-1"><User className="w-3 h-3" /> {lineup.coach}</span>
-                    </div>
-                    <div className="space-y-1.5">
-                      {lineup.players.map((p, i) => {
-                        const ratingVal = p.rating;
-                        const ratingColor = ratingVal >= 7.5 ? "text-emerald-400 bg-emerald-500/10" : ratingVal >= 6.5 ? "text-amber-400 bg-amber-500/10" : "text-red-400 bg-red-500/10";
-                        return (
-                          <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
-                            <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold bg-primary text-primary-foreground">{p.number}</div>
-                            <div className="flex-1 min-w-0"><p className="text-sm font-semibold text-foreground">{p.name}</p><p className="text-[10px] text-muted-foreground">{p.position} - {p.age} anos</p></div>
-                            <span className={`text-xs font-black tabular-nums px-2 py-0.5 rounded-md ${ratingColor}`}>{p.rating}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </SectionCard>
-                </RevealSection>
-              );
-            })()}
-              </>
+              </RevealSection>
             )}
           </div>
         )}
