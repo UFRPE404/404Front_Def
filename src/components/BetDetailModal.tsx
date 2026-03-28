@@ -1,4 +1,4 @@
-import { TrendingUp, Percent, AlertCircle, Shield, Swords, Calendar } from "lucide-react";
+import { TrendingUp, Percent, AlertCircle, Shield, Swords, Calendar, BarChart3 } from "lucide-react";
 import { SuggestedBet, TeamContext } from "@/data/matches";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -117,30 +117,31 @@ const BetDetailModal = ({ bet, isOpen, onClose }: BetDetailModalProps) => {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-primary px-2 py-1 bg-primary/15 rounded">
-            {bet.theme === "dream" ? "Para Sonhar" : "Melhores"}
-          </span>
-          {confInfo && (
-            <span
-              className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded"
-              style={{ color: confInfo.color, background: `${confInfo.color}15` }}
-            >
-              {confInfo.label}
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-primary px-2 py-1 bg-primary/15 rounded">
+              {bet.theme === "dream" ? "Para Sonhar" : "Melhores"}
             </span>
+            {confInfo && (
+              <span
+                className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded"
+                style={{ color: confInfo.color, background: `${confInfo.color}15` }}
+              >
+                {confInfo.label}
+              </span>
+            )}
+          </div>
+          {bet.matchDate && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ background: "hsl(var(--surface-elevated))" }}>
+              <Calendar className="w-3 h-3 text-primary" />
+              <span className="text-[11px] font-semibold text-primary">
+                {formatMatchDate(bet.matchDate)}
+              </span>
+            </div>
           )}
         </div>
 
-        <h2 className="text-lg font-bold text-foreground mb-3">{bet.league}</h2>
-
-        {bet.matchDate && (
-          <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 w-fit">
-            <Calendar className="w-4 h-4 text-primary shrink-0" />
-            <span className="text-sm font-semibold text-primary">
-              {formatMatchDate(bet.matchDate)}
-            </span>
-          </div>
-        )}
+        <h2 className="text-lg font-bold text-foreground mb-4">{bet.league}</h2>
 
         <div className="grid grid-cols-2 gap-6">
           {/* Left Column */}
@@ -182,7 +183,7 @@ const BetDetailModal = ({ bet, isOpen, onClose }: BetDetailModalProps) => {
               </div>
             </div>
 
-            {/* Barras */}
+            {/* Retorno + Risco */}
             <div className="space-y-2">
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
@@ -198,6 +199,43 @@ const BetDetailModal = ({ bet, isOpen, onClose }: BetDetailModalProps) => {
                 <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ color: riskColor, background: `${riskColor}15` }}>{riskLevel}</span>
               </div>
             </div>
+
+            {/* Mini gráfico comparativo */}
+            {hasContext && (
+              <div className="p-2.5 rounded-lg border border-border/50" style={{ background: "hsl(var(--surface-elevated))" }}>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <BarChart3 className="w-3 h-3 text-primary" />
+                  <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">Comparativo</p>
+                </div>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[
+                    { label: "Win%", home: bet.homeContext!.winRate, away: bet.awayContext!.winRate, max: 100 },
+                    { label: "Gols", home: bet.homeContext!.avgGoalsScored, away: bet.awayContext!.avgGoalsScored, max: Math.max(bet.homeContext!.avgGoalsScored, bet.awayContext!.avgGoalsScored, 1) },
+                    { label: "Sofr.", home: bet.homeContext!.avgGoalsConceded, away: bet.awayContext!.avgGoalsConceded, max: Math.max(bet.homeContext!.avgGoalsConceded, bet.awayContext!.avgGoalsConceded, 1) },
+                    { label: "CS", home: bet.homeContext!.cleanSheets, away: bet.awayContext!.cleanSheets, max: Math.max(bet.homeContext!.cleanSheets, bet.awayContext!.cleanSheets, 1) },
+                  ].map((stat) => (
+                    <div key={stat.label} className="flex flex-col items-center gap-1">
+                      <div className="flex items-end gap-0.5 h-10">
+                        <div className="w-3 rounded-t-sm" style={{ height: `${Math.max((stat.home / stat.max) * 100, 8)}%`, background: "#22c55e" }} />
+                        <div className="w-3 rounded-t-sm" style={{ height: `${Math.max((stat.away / stat.max) * 100, 8)}%`, background: "#3b82f6" }} />
+                      </div>
+                      <p className="text-[8px] text-muted-foreground font-bold leading-none">{stat.label}</p>
+                      <p className="text-[8px] text-muted-foreground leading-none">{stat.home} / {stat.away}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-center gap-3 mt-2">
+                  <div className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#22c55e" }} />
+                    <span className="text-[8px] text-muted-foreground">{bet.homeContext!.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#3b82f6" }} />
+                    <span className="text-[8px] text-muted-foreground">{bet.awayContext!.name}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right Column - Análise + Contexto */}
