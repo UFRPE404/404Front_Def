@@ -266,7 +266,7 @@ function LiveMatchCard({ match, realStats }: { match: any; realStats?: MatchLive
             { label: "1", value: odds![0] },
             { label: "X", value: odds![1] },
             { label: "2", value: odds![2] },
-          ].filter((_, i) => match.sport !== "Tênis" || i !== 1).map((o) => {
+          ].filter((o, i) => (match.sport !== "Tênis" || i !== 1) && o.value != null).map((o) => {
             const sel = isSelected(`${match.id}-${o.label}`);
             return (
               <button

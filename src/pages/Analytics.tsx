@@ -1111,20 +1111,13 @@ const Analytics = () => {
             </RevealSection>
             )}
 
-            {/* Form guide — Bet365 last 5 results style */}
+            {/* Form guide — Bet365 last 5 results style (only when real data available) */}
+            {historicData && (
             <RevealSection delay={match.live ? 80 : 40}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[{ team: match.teamA, isHome: true }, { team: match.teamB, isHome: false }].map(({ team, isHome }) => {
-                  const historicTeam = historicData ? (isHome ? historicData.home : historicData.away) : null;
-                  const results: ("W" | "D" | "L")[] = historicTeam
-                    ? (historicTeam.totals.form.slice(0, 5).split("") as ("W" | "D" | "L")[])
-                    : (() => {
-                        const seed = match.odds[0] * 37 + match.odds[isHome ? 0 : 2] * 13;
-                        return Array.from({ length: 5 }, (_, i) => {
-                          const v = Math.round(((seed * (i + 1) * 23) % 3));
-                          return (v === 0 ? "W" : v === 1 ? "D" : "L") as "W" | "D" | "L";
-                        });
-                      })();
+                  const historicTeam = isHome ? historicData.home : historicData.away;
+                  const results = historicTeam.totals.form.slice(0, 5).split("") as ("W" | "D" | "L")[];
                   const wCount = results.filter(r => r === "W").length;
                   const dCount = results.filter(r => r === "D").length;
                   const lCount = results.filter(r => r === "L").length;
@@ -1159,6 +1152,7 @@ const Analytics = () => {
                 })}
               </div>
             </RevealSection>
+            )}
           </div>
         )}
 
