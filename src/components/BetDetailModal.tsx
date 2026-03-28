@@ -1,4 +1,4 @@
-import { TrendingUp, Percent, AlertCircle, Shield, Swords, Calendar, BarChart3 } from "lucide-react";
+import { TrendingUp, Percent, AlertCircle, Calendar, BarChart3 } from "lucide-react";
 import { SuggestedBet, TeamContext } from "@/data/matches";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -36,8 +36,6 @@ const TeamStats = ({ ctx, label }: { ctx: TeamContext; label: string }) => (
       <p className="text-xs font-bold text-foreground">{ctx.name}</p>
       <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">{label}</span>
     </div>
-
-    {/* Forma recente */}
     {ctx.recentResults.length > 0 && (
       <div className="space-y-1">
         <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Forma recente</p>
@@ -48,8 +46,6 @@ const TeamStats = ({ ctx, label }: { ctx: TeamContext; label: string }) => (
         </div>
       </div>
     )}
-
-    {/* Stats grid */}
     <div className="grid grid-cols-2 gap-2 pt-1">
       <div>
         <p className="text-[9px] text-muted-foreground uppercase">Gols/jogo</p>
@@ -84,9 +80,9 @@ function formatMatchDate(matchDate: string): string {
   const isTomorrow =
     tomorrow.getDate() === day && tomorrow.getMonth() + 1 === month && tomorrow.getFullYear() === year;
   const time = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-  if (isToday) return `Jogo hoje às ${time}h`;
-  if (isTomorrow) return `Jogo amanhã às ${time}h`;
-  return `Jogo ${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")} às ${time}h`;
+  if (isToday) return `Hoje às ${time}h`;
+  if (isTomorrow) return `Amanhã às ${time}h`;
+  return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")} às ${time}h`;
 }
 
 const BetDetailModal = ({ bet, isOpen, onClose }: BetDetailModalProps) => {
@@ -115,154 +111,143 @@ const BetDetailModal = ({ bet, isOpen, onClose }: BetDetailModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-primary px-2 py-1 bg-primary/15 rounded">
-              {bet.theme === "dream" ? "Para Sonhar" : "Melhores"}
-            </span>
-            {confInfo && (
-              <span
-                className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded"
-                style={{ color: confInfo.color, background: `${confInfo.color}15` }}
-              >
-                {confInfo.label}
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
+        {/* === ROW 1: Header — badges + liga + confronto === */}
+        <div className="px-6 pt-6 pb-4 border-b" style={{ borderColor: "hsl(var(--border))", background: "hsl(var(--surface-elevated))" }}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-primary px-2 py-1 bg-primary/15 rounded">
+                {bet.theme === "dream" ? "Para Sonhar" : "Melhores"}
               </span>
-            )}
-          </div>
-          {bet.matchDate && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ background: "hsl(var(--surface-elevated))" }}>
-              <Calendar className="w-3 h-3 text-primary" />
-              <span className="text-[11px] font-semibold text-primary">
-                {formatMatchDate(bet.matchDate)}
-              </span>
+              {confInfo && (
+                <span
+                  className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded"
+                  style={{ color: confInfo.color, background: `${confInfo.color}15` }}
+                >
+                  {confInfo.label}
+                </span>
+              )}
             </div>
-          )}
-        </div>
-
-        <h2 className="text-lg font-bold text-foreground mb-4">{bet.league}</h2>
-
-        <div className="grid grid-cols-2 gap-6">
-          {/* Left Column */}
-          <div className="space-y-4">
-            {/* Confronto */}
-            <div className="flex flex-col gap-1.5">
-              <div className="p-2.5 rounded-lg font-semibold text-foreground flex items-center gap-2" style={{ background: "hsl(var(--surface-elevated))" }}>
-                <Shield className="w-3.5 h-3.5 text-primary" />
-                {bet.teamA}
-              </div>
-              <div className="text-center text-xs text-muted-foreground font-medium">vs</div>
-              <div className="p-2.5 rounded-lg font-semibold text-foreground flex items-center gap-2" style={{ background: "hsl(var(--surface-elevated))" }}>
-                <Swords className="w-3.5 h-3.5 text-muted-foreground" />
-                {bet.teamB}
-              </div>
-            </div>
-
-            {/* Pick */}
-            <div className="p-3 rounded-lg border border-primary/50 bg-primary/5">
-              <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Aposta sugerida</div>
-              <p className="font-bold text-primary text-base">{bet.pick}</p>
-            </div>
-
-            {/* Odds e Probabilidade */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="p-3 rounded-lg" style={{ background: "hsl(var(--surface-elevated))" }}>
-                <div className="flex items-center gap-1 mb-2">
-                  <TrendingUp className="w-3.5 h-3.5 text-primary" />
-                  <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">Odd</p>
-                </div>
-                <p className="text-2xl font-bold text-primary">{bet.odds.toFixed(2)}</p>
-              </div>
-              <div className="p-3 rounded-lg" style={{ background: "hsl(var(--surface-elevated))" }}>
-                <div className="flex items-center gap-1 mb-2">
-                  <Percent className="w-3.5 h-3.5 text-primary" />
-                  <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">Chance</p>
-                </div>
-                <p className="text-2xl font-bold text-foreground">{actualProbability}%</p>
-              </div>
-            </div>
-
-            {/* Retorno + Risco */}
-            <div className="space-y-2">
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">Retorno em R$ 100</p>
-                  <p className="text-xs font-bold text-primary">+R$ {((bet.odds - 1) * 100).toFixed(0)}</p>
-                </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "hsl(var(--border))" }}>
-                  <div className="h-full rounded-full" style={{ width: Math.min((bet.odds / 10) * 100, 100) + "%", background: "#ffd93d" }} />
-                </div>
-              </div>
-              <div className="flex items-center justify-between p-2 rounded-lg border border-border/50" style={{ background: "hsl(var(--surface-elevated))" }}>
-                <span className="text-xs text-muted-foreground">Risco</span>
-                <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ color: riskColor, background: `${riskColor}15` }}>{riskLevel}</span>
-              </div>
-            </div>
-
-            {/* Mini gráfico comparativo */}
-            {hasContext && (
-              <div className="p-2.5 rounded-lg border border-border/50" style={{ background: "hsl(var(--surface-elevated))" }}>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <BarChart3 className="w-3 h-3 text-primary" />
-                  <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">Comparativo</p>
-                </div>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {[
-                    { label: "Win%", home: bet.homeContext!.winRate, away: bet.awayContext!.winRate, max: 100 },
-                    { label: "Gols", home: bet.homeContext!.avgGoalsScored, away: bet.awayContext!.avgGoalsScored, max: Math.max(bet.homeContext!.avgGoalsScored, bet.awayContext!.avgGoalsScored, 1) },
-                    { label: "Sofr.", home: bet.homeContext!.avgGoalsConceded, away: bet.awayContext!.avgGoalsConceded, max: Math.max(bet.homeContext!.avgGoalsConceded, bet.awayContext!.avgGoalsConceded, 1) },
-                    { label: "CS", home: bet.homeContext!.cleanSheets, away: bet.awayContext!.cleanSheets, max: Math.max(bet.homeContext!.cleanSheets, bet.awayContext!.cleanSheets, 1) },
-                  ].map((stat) => (
-                    <div key={stat.label} className="flex flex-col items-center gap-1">
-                      <div className="flex items-end gap-0.5 h-10">
-                        <div className="w-3 rounded-t-sm" style={{ height: `${Math.max((stat.home / stat.max) * 100, 8)}%`, background: "#22c55e" }} />
-                        <div className="w-3 rounded-t-sm" style={{ height: `${Math.max((stat.away / stat.max) * 100, 8)}%`, background: "#3b82f6" }} />
-                      </div>
-                      <p className="text-[8px] text-muted-foreground font-bold leading-none">{stat.label}</p>
-                      <p className="text-[8px] text-muted-foreground leading-none">{stat.home} / {stat.away}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center justify-center gap-3 mt-2">
-                  <div className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#22c55e" }} />
-                    <span className="text-[8px] text-muted-foreground">{bet.homeContext!.name}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#3b82f6" }} />
-                    <span className="text-[8px] text-muted-foreground">{bet.awayContext!.name}</span>
-                  </div>
-                </div>
+            {bet.matchDate && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border/50" style={{ background: "hsl(var(--card))" }}>
+                <Calendar className="w-3 h-3 text-primary" />
+                <span className="text-[11px] font-semibold text-primary">
+                  {formatMatchDate(bet.matchDate)}
+                </span>
               </div>
             )}
           </div>
-
-          {/* Right Column - Análise + Contexto */}
-          <div className="space-y-4">
-            {/* Análise IA */}
-            <div className="space-y-2 p-3 rounded-lg border border-primary/30 bg-primary/5">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-primary shrink-0" />
-                <p className="text-[10px] uppercase font-bold text-primary tracking-wider">Análise</p>
-              </div>
-              <p className="text-sm text-foreground leading-relaxed">
-                {bet.reasoning || "Análise indisponível."}
-              </p>
-            </div>
-
-            {/* Contexto dos Times */}
-            {hasContext && (
-              <>
-                <TeamStats ctx={bet.homeContext!} label="Casa" />
-                <TeamStats ctx={bet.awayContext!} label="Fora" />
-              </>
-            )}
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">{bet.league}</p>
+          <div className="flex items-center justify-center gap-4 py-1">
+            <span className="text-xl font-bold text-foreground">{bet.teamA}</span>
+            <span className="text-sm font-bold text-primary px-3 py-1 rounded-full bg-primary/10">VS</span>
+            <span className="text-xl font-bold text-foreground">{bet.teamB}</span>
           </div>
         </div>
 
-        {/* Action Button */}
-        <div className="pt-4 border-t" style={{ borderColor: "hsl(var(--border))" }}>
+        <div className="px-6 py-5 space-y-4">
+
+        {/* === ROW 2: Aposta Sugerida | Análise IA === */}
+        <div className="grid grid-cols-5 gap-3">
+          <div className="col-span-2 p-3 rounded-lg border border-primary/50 bg-primary/5 flex flex-col justify-center">
+            <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Aposta sugerida</div>
+            <p className="font-bold text-primary text-sm">{bet.pick}</p>
+          </div>
+          <div className="col-span-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <AlertCircle className="w-3.5 h-3.5 text-primary shrink-0" />
+              <p className="text-[10px] uppercase font-bold text-primary tracking-wider">Análise</p>
+            </div>
+            <p className="text-xs text-foreground leading-relaxed">
+              {bet.reasoning || "Análise indisponível."}
+            </p>
+          </div>
+        </div>
+
+        {/* === ROW 3: ODD | Chance | Risco + Retorno === */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="p-3 rounded-lg" style={{ background: "hsl(var(--surface-elevated))" }}>
+            <div className="flex items-center gap-1 mb-1">
+              <TrendingUp className="w-3.5 h-3.5 text-primary" />
+              <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">Odd</p>
+            </div>
+            <p className="text-2xl font-bold text-primary">{bet.odds.toFixed(2)}</p>
+          </div>
+          <div className="p-3 rounded-lg" style={{ background: "hsl(var(--surface-elevated))" }}>
+            <div className="flex items-center gap-1 mb-1">
+              <Percent className="w-3.5 h-3.5 text-primary" />
+              <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">Chance</p>
+            </div>
+            <p className="text-2xl font-bold text-foreground">{actualProbability}%</p>
+          </div>
+          <div className="p-3 rounded-lg flex flex-col justify-between" style={{ background: "hsl(var(--surface-elevated))" }}>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">Risco</p>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ color: riskColor, background: `${riskColor}15` }}>{riskLevel}</span>
+              </div>
+              <div className="h-1.5 rounded-full overflow-hidden mt-2" style={{ background: "hsl(var(--border))" }}>
+                <div className="h-full rounded-full" style={{ width: Math.min((bet.odds / 10) * 100, 100) + "%", background: "#ffd93d" }} />
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-[9px] text-muted-foreground">Retorno R$100</p>
+              <p className="text-xs font-bold text-primary">+R$ {((bet.odds - 1) * 100).toFixed(0)}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* === ROW 4: H2H Time 1 | H2H Time 2 === */}
+        {hasContext && (
+          <div className="grid grid-cols-2 gap-3">
+            <TeamStats ctx={bet.homeContext!} label="Casa" />
+            <TeamStats ctx={bet.awayContext!} label="Fora" />
+          </div>
+        )}
+
+        {/* === ROW 5: Gráfico Comparativo === */}
+        {hasContext && (
+          <div className="p-3 rounded-lg border border-border/50" style={{ background: "hsl(var(--surface-elevated))" }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-1.5">
+                <BarChart3 className="w-3.5 h-3.5 text-primary" />
+                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Comparativo</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full" style={{ background: "#22c55e" }} />
+                  <span className="text-[9px] text-muted-foreground font-medium">{bet.homeContext!.name}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full" style={{ background: "#3b82f6" }} />
+                  <span className="text-[9px] text-muted-foreground font-medium">{bet.awayContext!.name}</span>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-3">
+              {[
+                { label: "Win%", home: bet.homeContext!.winRate, away: bet.awayContext!.winRate, max: 100 },
+                { label: "Gols", home: bet.homeContext!.avgGoalsScored, away: bet.awayContext!.avgGoalsScored, max: Math.max(bet.homeContext!.avgGoalsScored, bet.awayContext!.avgGoalsScored, 1) },
+                { label: "Sofridos", home: bet.homeContext!.avgGoalsConceded, away: bet.awayContext!.avgGoalsConceded, max: Math.max(bet.homeContext!.avgGoalsConceded, bet.awayContext!.avgGoalsConceded, 1) },
+                { label: "CS", home: bet.homeContext!.cleanSheets, away: bet.awayContext!.cleanSheets, max: Math.max(bet.homeContext!.cleanSheets, bet.awayContext!.cleanSheets, 1) },
+              ].map((stat) => (
+                <div key={stat.label} className="flex flex-col items-center gap-1">
+                  <div className="flex items-end gap-1 h-12">
+                    <div className="w-4 rounded-t-sm transition-all" style={{ height: `${Math.max((stat.home / stat.max) * 100, 10)}%`, background: "#22c55e" }} />
+                    <div className="w-4 rounded-t-sm transition-all" style={{ height: `${Math.max((stat.away / stat.max) * 100, 10)}%`, background: "#3b82f6" }} />
+                  </div>
+                  <p className="text-[9px] text-muted-foreground font-bold">{stat.label}</p>
+                  <p className="text-[9px] text-foreground font-semibold">{stat.home} / {stat.away}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        </div>
+
+        {/* === Botão === */}
+        <div className="px-6 pb-6">
           <Button
             onClick={handleAddBet}
             variant={isAdded ? "outline" : "hero"}
