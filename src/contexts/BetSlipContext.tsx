@@ -2,6 +2,7 @@ import { createContext, useContext, useState, ReactNode } from "react";
 
 export interface BetSelection {
   id: string;
+  matchId?: string;
   league: string;
   teamA: string;
   teamB: string;

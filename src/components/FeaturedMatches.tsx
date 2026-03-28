@@ -1,6 +1,8 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import MatchCard from "./MatchCard";
-import { useFeaturedMatches, useLiveMatches, useMatchesBySport } from "@/hooks/useMatchesData";
+import { useMatches, useLiveMatches, useMatchesBySport } from "@/hooks/useMatchesData";
+import { getFeaturedMatches } from "@/utils/matchPriority";
 import { Loader2 } from "lucide-react";
 
 interface FeaturedMatchesProps {
@@ -8,19 +10,26 @@ interface FeaturedMatchesProps {
 }
 
 const FeaturedMatches = ({ sport }: FeaturedMatchesProps) => {
-  const { matches: featuredMatches, loading: loadingFeatured } = useFeaturedMatches();
+  const { matches: allMatches, loading: loadingAll } = useMatches();
   const { matches: liveMatchesList } = useLiveMatches();
   const { matches: sportMatches, loading: loadingSport } = useMatchesBySport(
     sport !== "Futebol" && sport !== "Ao Vivo" ? sport : null
   );
 
+  // For Futebol: apply tier-based priority filtering on today's matches
+  const priorityMatches = useMemo(() => {
+    if (sport !== "Futebol") return [];
+    const todayMatches = allMatches.filter((m) => !m.date || m.date === "Hoje");
+    return getFeaturedMatches(todayMatches);
+  }, [allMatches, sport]);
+
   const matches = (() => {
     if (sport === "Ao Vivo") return liveMatchesList;
-    if (sport === "Futebol") return featuredMatches;
+    if (sport === "Futebol") return priorityMatches;
     return sportMatches;
   })();
 
-  const isLoading = sport === "Futebol" ? loadingFeatured : loadingSport;
+  const isLoading = sport === "Futebol" ? loadingAll : loadingSport;
 
   const sectionTitle = sport === "Ao Vivo" ? "Ao Vivo" : sport === "Futebol" ? "Sugestões" : sport;
   const linkTo = sport === "Ao Vivo" ? "/ao-vivo" : sport === "Futebol" ? "/esportes" : `/esportes?sport=${encodeURIComponent(sport)}`;
