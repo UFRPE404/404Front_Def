@@ -1505,11 +1505,11 @@ const Analytics = () => {
                           const betId = `${match.id}-odds-1x2-${m.sub}`;
                           const sel = isSelected(betId);
                           return (
-                            <button key={i} onClick={() => handleOdd(betId, m.label, m.odd)} className={`relative flex flex-col items-center gap-1.5 pt-4 pb-4 px-2 w-full rounded-xl transition-all border-2 ${sel ? "border-emerald-500 bg-emerald-500/10 shadow-sm shadow-emerald-500/20" : m.active ? "border-primary bg-primary/5 shadow-sm shadow-primary/10" : "border-border/30 bg-secondary/20 hover:border-primary/30 hover:bg-primary/5"}`}>
-                              {m.active && !sel && <div className="absolute top-1.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-primary bg-primary/15 px-2 py-0.5 rounded-full">Favorito</div>}
+                            <button key={i} onClick={() => handleOdd(betId, m.label, m.odd)} className={`relative flex flex-col items-center gap-1.5 pt-4 pb-4 px-2 w-full rounded-xl transition-all border-2 ${sel ? "border-emerald-500 bg-emerald-500/10 shadow-sm shadow-emerald-500/20" : m.active ? "border-blue-500 bg-blue-500/5 shadow-sm shadow-blue-500/10" : "border-border/30 bg-secondary/20 hover:border-primary/30 hover:bg-primary/5"}`}>
+                              {m.active && !sel && <div className="absolute top-1.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-blue-400 bg-blue-500/15 px-2 py-0.5 rounded-full">Favorito</div>}
                               {sel && <div className="absolute top-1.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded-full">No bilhete</div>}
                               <span className={`text-[10px] font-medium truncate w-full text-center ${(m.active || sel) ? "mt-4" : ""} ${sel ? "text-emerald-400" : "text-muted-foreground"}`}>{m.label}</span>
-                              <span className={`text-2xl font-black tabular-nums ${sel ? "text-emerald-400" : m.active ? "text-primary" : "text-foreground"}`}>{m.odd.toFixed(2)}</span>
+                              <span className={`text-2xl font-black tabular-nums ${sel ? "text-emerald-400" : m.active ? "text-blue-400" : "text-foreground"}`}>{m.odd.toFixed(2)}</span>
                               <span className="text-[9px] text-muted-foreground tabular-nums">{Math.round((1 / m.odd) * 100)}%</span>
                             </button>
                           );
