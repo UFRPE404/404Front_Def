@@ -61,7 +61,7 @@ const SuggestedBets = () => {
 
       <div
         ref={ref}
-        className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory"
+        className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory items-stretch"
         style={{ scrollbarWidth: "none" }}
       >
         {loading ? (
@@ -80,7 +80,7 @@ const SuggestedBets = () => {
           bets.map((bet, i) => (
             <div
               key={bet.id}
-              className="flex-shrink-0 w-[300px] snap-start animate-in fade-in slide-in-from-bottom-3"
+              className="flex-shrink-0 w-[300px] snap-start animate-in fade-in slide-in-from-bottom-3 h-auto self-stretch"
               style={{
                 animationDelay: `${i * 70}ms`,
                 animationFillMode: "both",

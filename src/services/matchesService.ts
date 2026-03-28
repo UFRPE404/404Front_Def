@@ -27,11 +27,7 @@ function mapApiMatchToMatchData(raw: any): MatchData {
     teamB: raw.away?.name ?? "Time B",
     scoreA,
     scoreB,
-    odds: [
-      raw.odds?.[0] ?? 1.50,
-      raw.odds?.[1] ?? 3.50,
-      raw.odds?.[2] ?? 4.00,
-    ],
+    odds: raw.odds ?? [1.50, 3.50, 4.00] as [number, number, number],
     sport: sportName,
     period: raw.timer?.tt === "1" ? "2T" : "1T",
   };

@@ -74,7 +74,7 @@ const SuggestedBetCard = ({
   return (
     <>
       <div
-        className="rounded-xl p-4 border transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer group"
+        className="rounded-xl p-4 border transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer group h-full flex flex-col"
         style={{
           background: "hsl(var(--card))",
           borderColor: "hsl(var(--border))",
@@ -134,9 +134,11 @@ const SuggestedBetCard = ({
         </div>
 
         {/* Reasoning preview */}
-        {reasoning && (
-          <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{reasoning}</p>
-        )}
+        <div className="flex-1">
+          {reasoning && (
+            <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{reasoning}</p>
+          )}
+        </div>
 
         {/* Odds + Probabilidade */}
         <div className="grid grid-cols-2 gap-2 mb-3">
