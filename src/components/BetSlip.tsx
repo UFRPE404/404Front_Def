@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { X, ChevronUp, Trash2, ReceiptText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { X, ChevronUp, Trash2, ReceiptText, ExternalLink } from "lucide-react";
 import { useBetSlip } from "@/contexts/BetSlipContext";
 import { Button } from "@/components/ui/button";
 
 const BetSlip = () => {
   const [expanded, setExpanded] = useState(false);
   const { selections, removeSelection, clearAll } = useBetSlip();
+  const navigate = useNavigate();
 
   const totalOdds = selections.reduce((acc, s) => acc * s.odds, 1);
 
@@ -67,6 +69,16 @@ const BetSlip = () => {
                           {sel.pick}
                         </span>
                         <span className="text-xs font-bold text-foreground">{sel.odds.toFixed(2)}</span>
+                        {sel.matchId && (
+                          <button
+                            onClick={() => { navigate(`/analises/${encodeURIComponent(sel.matchId!)}`); setExpanded(false); }}
+                            className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground hover:text-primary transition-colors ml-auto"
+                            title="Ver partida"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Ver partida
+                          </button>
+                        )}
                       </div>
                     </div>
                     <button

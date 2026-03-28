@@ -170,6 +170,7 @@ function OddPopoverButton({ label, odd, match, onNavigate }: {
             <button
               onClick={() => addSelection({
                 id: betId,
+                matchId: match.id,
                 league: match.league,
                 teamA: match.teamA,
                 teamB: match.teamB,
@@ -503,7 +504,7 @@ const Analytics = () => {
   const normB = 100 - normA - normDraw;
 
   const handleOdd = (betId: string, pick: string, odd: number) => {
-    addSelection({ id: betId, league: match.league, teamA: match.teamA, teamB: match.teamB, pick, odds: odd });
+    addSelection({ id: betId, matchId: match.id, league: match.league, teamA: match.teamA, teamB: match.teamB, pick, odds: odd });
   };
 
   return (

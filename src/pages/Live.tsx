@@ -129,6 +129,7 @@ function LiveMatchCard({ match }: { match: any }) {
     e.stopPropagation();
     addSelection({
       id: `${match.id}-${label}`,
+      matchId: match.id,
       league: match.league,
       teamA: match.teamA,
       teamB: match.teamB,

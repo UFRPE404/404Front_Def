@@ -51,6 +51,7 @@ const SuggestedBetCard = ({
     e.stopPropagation();
     addSelection({
       id: `${matchId}-${pick}`,
+      matchId,
       league,
       teamA,
       teamB,
