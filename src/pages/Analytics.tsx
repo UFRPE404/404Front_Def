@@ -1444,9 +1444,68 @@ const Analytics = () => {
           <div className="space-y-5">
             {/* Loading state */}
             {oddsLoading && (
-              <div className="flex flex-col items-center py-12 gap-3">
-                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="text-xs text-muted-foreground">A carregar odds...</p>
+              <div className="space-y-5">
+                {/* Header skeleton */}
+                <div className="flex items-center gap-3 py-4 px-1">
+                  <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin shrink-0" />
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-sm font-semibold text-foreground">Buscando as melhores odds...</span>
+                    <span className="text-xs text-muted-foreground">Consultando casas de apostas em tempo real</span>
+                  </div>
+                </div>
+
+                {/* 1X2 skeleton */}
+                <div className="rounded-xl border border-border/40 bg-card p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="h-3 w-28 rounded-full bg-secondary animate-pulse" />
+                    <div className="h-4 w-8 rounded-full bg-secondary animate-pulse" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[0, 1, 2].map((i) => (
+                      <div key={i} className="flex flex-col items-center gap-2 py-4 px-2 rounded-xl border-2 border-border/20 bg-secondary/20"
+                        style={{ animationDelay: `${i * 80}ms` }}>
+                        <div className="h-2.5 w-16 rounded-full bg-secondary animate-pulse" />
+                        <div className="h-7 w-12 rounded-lg bg-secondary animate-pulse" />
+                        <div className="h-2 w-8 rounded-full bg-secondary animate-pulse" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Over/Under skeleton */}
+                <div className="rounded-xl border border-border/40 bg-card p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1 h-4 rounded-full bg-secondary animate-pulse" />
+                    <div className="h-3 w-32 rounded-full bg-secondary animate-pulse" />
+                  </div>
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-secondary/20 border border-border/20"
+                      style={{ animationDelay: `${i * 60}ms` }}>
+                      <div className="h-3 w-20 rounded-full bg-secondary animate-pulse" />
+                      <div className="flex gap-2">
+                        <div className="h-7 w-14 rounded-lg bg-secondary animate-pulse" />
+                        <div className="h-7 w-14 rounded-lg bg-secondary animate-pulse" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* BTTS / DC skeleton */}
+                <div className="grid grid-cols-2 gap-4">
+                  {[0, 1].map((i) => (
+                    <div key={i} className="rounded-xl border border-border/40 bg-card p-4 space-y-3">
+                      <div className="h-3 w-24 rounded-full bg-secondary animate-pulse" />
+                      <div className="grid grid-cols-2 gap-2">
+                        {[0, 1].map((j) => (
+                          <div key={j} className="flex flex-col items-center gap-1.5 py-3 rounded-xl border border-border/20 bg-secondary/20">
+                            <div className="h-2.5 w-10 rounded-full bg-secondary animate-pulse" />
+                            <div className="h-6 w-12 rounded-lg bg-secondary animate-pulse" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

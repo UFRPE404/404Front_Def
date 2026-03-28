@@ -1,9 +1,10 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BetSlip from "@/components/BetSlip";
 import LiveSportFilter from "@/components/LiveSportFilter";
+import LeagueFilter from "@/components/LeagueFilter";
 import { useLiveMatches } from "@/hooks/useMatchesData";
 import { generateMatchAnalysis } from "@/utils/matchAnalysis";
 import { useBetSlip } from "@/contexts/BetSlipContext";
@@ -277,6 +278,24 @@ const Live = () => {
   const searchParams = new URLSearchParams(window.location.search);
   const sportParam = searchParams.get("sport");
   const [activeSport, setActiveSport] = useState(sportParam || "Todos");
+  const [selectedLeagues, setSelectedLeagues] = useState<Set<string>>(new Set());
+
+  const toggleLeague = useCallback((league: string) => {
+    setSelectedLeagues((prev) => {
+      const next = new Set(prev);
+      if (next.has(league)) next.delete(league);
+      else next.add(league);
+      return next;
+    });
+  }, []);
+
+  const clearLeagues = useCallback(() => setSelectedLeagues(new Set()), []);
+
+  // Reset league filter when sport changes
+  useEffect(() => {
+    setSelectedLeagues(new Set());
+  }, [activeSport]);
+
   const { matches: liveMatches } = useLiveMatches();
   const navigate = useNavigate();
   const tickerRef = useRef<HTMLDivElement>(null);
@@ -314,6 +333,18 @@ const Live = () => {
     });
     return Object.entries(groups);
   }, [filteredMatches]);
+
+  // League entries for the filter panel
+  const leagueEntries = useMemo(
+    () => matchesByLeague.map(([name, matches]) => ({ name, count: matches.length })),
+    [matchesByLeague]
+  );
+
+  // Apply league filter (empty set = show all)
+  const displayedLeagues = useMemo(() => {
+    if (selectedLeagues.size === 0) return matchesByLeague;
+    return matchesByLeague.filter(([league]) => selectedLeagues.has(league));
+  }, [matchesByLeague, selectedLeagues]);
 
   const scrollTicker = (dir: number) => {
     tickerRef.current?.scrollBy({ left: dir * 200, behavior: "smooth" });
@@ -423,10 +454,36 @@ const Live = () => {
           </div>
         )}
 
+        {/* ── LEAGUE FILTER (mobile) ── */}
+        {leagueEntries.length > 0 && (
+          <div className="px-4 pb-2 lg:hidden">
+            <LeagueFilter
+              leagues={leagueEntries}
+              selectedLeagues={selectedLeagues}
+              onToggle={toggleLeague}
+              onClear={clearLeagues}
+              isMobile
+            />
+          </div>
+        )}
+
         {/* ── MATCHES BY LEAGUE (SofaScore pattern) ── */}
-        <div className="px-4 pt-4 space-y-6">
-          {matchesByLeague.length > 0 ? (
-            matchesByLeague.map(([league, matches]) => {
+        <div className="px-4 pt-4 flex gap-6 items-start">
+          {/* Desktop League Filter Sidebar */}
+          {leagueEntries.length > 0 && (
+            <aside className="hidden lg:block w-56 flex-shrink-0">
+              <LeagueFilter
+                leagues={leagueEntries}
+                selectedLeagues={selectedLeagues}
+                onToggle={toggleLeague}
+                onClear={clearLeagues}
+              />
+            </aside>
+          )}
+
+          <div className="flex-1 min-w-0 space-y-6">
+          {displayedLeagues.length > 0 ? (
+            displayedLeagues.map(([league, matches]) => {
               const SportIcon = sportIcons[matches[0]?.sport || "Futebol"] || Trophy;
               return (
                 <div key={league}>
@@ -458,12 +515,15 @@ const Live = () => {
           ) : (
             <div className="flex flex-col items-center justify-center py-20">
               <Zap className="w-8 h-8 text-muted-foreground/30 mb-3" />
-              <p className="text-muted-foreground font-medium mb-1">Nenhum jogo ao vivo</p>
+              <p className="text-muted-foreground font-medium mb-1">
+                {selectedLeagues.size > 0 ? "Nenhuma liga selecionada com jogos" : "Nenhum jogo ao vivo"}
+              </p>
               <p className="text-muted-foreground/60 text-sm">
-                Selecione outro esporte ou volte mais tarde
+                {selectedLeagues.size > 0 ? "Ajuste o filtro de ligas" : "Selecione outro esporte ou volte mais tarde"}
               </p>
             </div>
           )}
+          </div>
         </div>
       </main>
 
