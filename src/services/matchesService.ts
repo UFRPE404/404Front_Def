@@ -130,17 +130,47 @@ function isVirtualMatch(game: any): boolean {
 
 /**
  * Service layer for matches data.
+ *
+ * Cache em memória no cliente: evita que navegar entre páginas esvazie a lista
+ * enquanto aguarda a resposta da API. O cache é invalidado quando o backend
+ * responde com dados mais novos (cacheComplete ou mais jogos do que o atual).
  */
+interface ClientCache {
+  matches: MatchData[];
+  cacheComplete: boolean;
+  ts: number;
+}
+let _clientCache: ClientCache | null = null;
+const CLIENT_CACHE_TTL = 5 * 60 * 1000; // 5 minutos no cliente
 
 export async function getAllMatchesWithStatus(): Promise<{ matches: MatchData[]; cacheComplete: boolean }> {
+  // Retorna o cache do cliente imediatamente enquanto a request acontece em paralelo
+  const now = Date.now();
+  const cachedSnapshot = _clientCache && (now - _clientCache.ts) < CLIENT_CACHE_TTL
+    ? { matches: _clientCache.matches, cacheComplete: _clientCache.cacheComplete }
+    : null;
+
   try {
     const response = await axios.get(`${API_BASE_URL}/api/matches/upcoming-with-odds`);
     const { matches: raw, cacheComplete } = response.data as { matches: any[]; cacheComplete: boolean };
-    return { matches: raw.map(mapEnrichedToMatchData), cacheComplete: !!cacheComplete };
+    const mapped = raw.map(mapEnrichedToMatchData);
+    _clientCache = { matches: mapped, cacheComplete: !!cacheComplete, ts: Date.now() };
+    return { matches: mapped, cacheComplete: !!cacheComplete };
   } catch (error) {
     console.error("Erro ao buscar partidas:", error);
+    // Em caso de erro, devolve o cache antigo se existir
+    if (cachedSnapshot) return cachedSnapshot;
     return { matches: [], cacheComplete: false };
   }
+}
+
+/**
+ * Retorna o cache do cliente sincronamente (sem fazer request).
+ * Usado pelo hook useMatches para popular o estado inicial e evitar flash vazio.
+ */
+export function getCachedMatches(): { matches: MatchData[]; cacheComplete: boolean } | null {
+  if (!_clientCache) return null;
+  return { matches: _clientCache.matches, cacheComplete: _clientCache.cacheComplete };
 }
 
 export async function getAllMatches(): Promise<MatchData[]> {
@@ -520,6 +550,19 @@ export async function getMatchLiveStats(matchId: string): Promise<MatchLiveStats
     return response.data as MatchLiveStats;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Retorna as estatísticas ao vivo de TODOS os jogos de uma vez.
+ * Usa o endpoint bulk para reduzir N requests → 1 request.
+ */
+export async function getMatchLiveStatsBulk(): Promise<Record<string, MatchLiveStats>> {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/live-stats/bulk`, { timeout: 10000 });
+    return response.data as Record<string, MatchLiveStats>;
+  } catch {
+    return {};
   }
 }
 

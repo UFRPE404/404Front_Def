@@ -8,8 +8,8 @@ import LeagueFilter from "@/components/LeagueFilter";
 import { useLiveMatches } from "@/hooks/useMatchesData";
 import { generateMatchAnalysis } from "@/utils/matchAnalysis";
 import { useBetSlip } from "@/contexts/BetSlipContext";
-import { getMatchLiveStats, getMatchOdds, type MatchLiveStats } from "@/services/matchesService";
-import { ChevronLeft, ChevronRight, Trophy, Dumbbell, Target, Volleyball, Gamepad2, Zap, Sparkles, Flame, Star } from "lucide-react";
+import { getMatchLiveStatsBulk, getMatchOdds, type MatchLiveStats } from "@/services/matchesService";
+import { ChevronLeft, ChevronRight, Trophy, Dumbbell, Target, Volleyball, Gamepad2, Zap, Sparkles, Flame, Star, Loader2 } from "lucide-react";
 import { getFeaturedMatches, getMatchTier } from "@/utils/matchPriority";
 
 /* ── helpers ───────────────────────────────────── */
@@ -363,7 +363,7 @@ const Live = () => {
     setSelectedLeagues(new Set());
   }, [activeSport]);
 
-  const { matches: liveMatches } = useLiveMatches();
+  const { matches: liveMatches, loading } = useLiveMatches();
   const navigate = useNavigate();
   const tickerRef = useRef<HTMLDivElement>(null);
   const featuredScrollRef = useRef<HTMLDivElement>(null);
@@ -372,29 +372,22 @@ const Live = () => {
   const featuredLive = useMemo(() => getFeaturedMatches(liveMatches), [liveMatches]);
   const featuredTier = featuredLive.length > 0 ? getMatchTier(featuredLive[0]) : 0;
 
-  // ── Real live stats for each match ──
+  // ── Real live stats — 1 bulk request para todos os jogos ──
   const [liveStatsMap, setLiveStatsMap] = useState<Record<string, MatchLiveStats | null>>({});
 
-  const fetchAllLiveStats = useCallback(async (matches: typeof liveMatches) => {
-    if (matches.length === 0) return;
-    const results = await Promise.allSettled(
-      matches.map((m) => getMatchLiveStats(m.id))
-    );
-    const newMap: Record<string, MatchLiveStats | null> = {};
-    matches.forEach((m, i) => {
-      const r = results[i];
-      newMap[m.id] = r.status === "fulfilled" ? r.value : null;
-    });
-    setLiveStatsMap(newMap);
+  const fetchAllLiveStats = useCallback(async () => {
+    const bulk = await getMatchLiveStatsBulk();
+    // Converte Record<id, stats> para Record<id, stats | null> compatível com o estado
+    setLiveStatsMap(bulk as Record<string, MatchLiveStats | null>);
   }, []);
 
-  // Fetch live stats on mount and every 10s (synced with match polling)
+  // Fetch live stats on mount e a cada 30s (1 request bulk ao invés de N)
   useEffect(() => {
     if (liveMatches.length === 0) return;
-    fetchAllLiveStats(liveMatches);
-    const intervalId = setInterval(() => fetchAllLiveStats(liveMatches), 10_000);
+    fetchAllLiveStats();
+    const intervalId = setInterval(fetchAllLiveStats, 30_000);
     return () => clearInterval(intervalId);
-  }, [liveMatches, fetchAllLiveStats]);
+  }, [liveMatches.length, fetchAllLiveStats]);
 
   const sportCounts = useMemo(() => {
     const counts: Record<string, number> = {
@@ -493,8 +486,29 @@ const Live = () => {
           />
         </div>
 
+        {/* ── LOADING STATE ─────────────────────── */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-24 gap-5">
+            <div className="relative">
+              <div className="w-20 h-20 rounded-full border-4 border-secondary" />
+              <div className="absolute inset-0 w-20 h-20 rounded-full border-4 border-transparent border-t-primary animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-2xl">⚽</span>
+              </div>
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-semibold text-foreground">Carregando partidas ao vivo</h3>
+              <p className="text-sm text-muted-foreground">Buscando os jogos em andamento...</p>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/50">
+              <Loader2 className="w-4 h-4 text-primary animate-spin" />
+              <span className="text-xs text-muted-foreground">Conectando com a API de dados</span>
+            </div>
+          </div>
+        )}
+
         {/* ── FEATURED LIVE SECTION ─────────────── */}
-        {featuredLive.length > 0 && activeSport !== "Destaques" && (
+        {!loading && featuredLive.length > 0 && activeSport !== "Destaques" && (
           <div className="px-4 pb-2">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -546,7 +560,7 @@ const Live = () => {
         )}
 
         {/* ── LEAGUE FILTER (mobile) ── */}
-        {leagueEntries.length > 0 && (
+        {!loading && leagueEntries.length > 0 && (
           <div className="px-4 pb-2 lg:hidden">
             <LeagueFilter
               leagues={leagueEntries}
@@ -559,7 +573,7 @@ const Live = () => {
         )}
 
         {/* ── MATCHES BY LEAGUE (SofaScore pattern) ── */}
-        <div className="px-4 pt-4 flex gap-6 items-start">
+        {!loading && <div className="px-4 pt-4 flex gap-6 items-start">
           {/* Desktop League Filter Sidebar */}
           {leagueEntries.length > 0 && (
             <aside className="hidden lg:block w-56 flex-shrink-0">
@@ -615,7 +629,7 @@ const Live = () => {
             </div>
           )}
           </div>
-        </div>
+        </div>}
       </main>
 
       <Footer />

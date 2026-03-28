@@ -15,8 +15,10 @@ export interface UseMatchesResult {
  * Handles loading and error states for easier integration with backend
  */
 export function useMatches(): UseMatchesResult {
-  const [matches, setMatches] = useState<MatchData[]>([]);
-  const [loading, setLoading] = useState(false);
+  // Inicializa com o cache do cliente (se existir) para evitar flash vazio ao navegar
+  const seed = matchesService.getCachedMatches();
+  const [matches, setMatches] = useState<MatchData[]>(seed?.matches ?? []);
+  const [loading, setLoading] = useState(!seed);
   const [error, setError] = useState<Error | null>(null);
   const [tick, setTick] = useState(0);
 
@@ -39,7 +41,8 @@ export function useMatches(): UseMatchesResult {
 
   useEffect(() => {
     if (pollRef.current) clearTimeout(pollRef.current);
-    setLoading(true);
+    // Só mostra loading se não temos dados em cache
+    if (!matchesService.getCachedMatches()) setLoading(true);
     setError(null);
     matchesService
       .getAllMatchesWithStatus()
@@ -105,9 +108,9 @@ export function useFeaturedMatches(): UseMatchesResult {
 
 /**
  * Hook to fetch live matches with polling (real-time updates)
- * @param intervalMs - polling interval in ms (default: 10s)
+ * @param intervalMs - polling interval in ms (default: 20s)
  */
-export function useLiveMatches(intervalMs = 10_000): UseMatchesResult {
+export function useLiveMatches(intervalMs = 20_000): UseMatchesResult {
   const [matches, setMatches] = useState<MatchData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);

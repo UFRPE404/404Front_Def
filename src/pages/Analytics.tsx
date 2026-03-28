@@ -700,7 +700,17 @@ const Analytics = () => {
                     </>
                   ) : (
                     <>
-                      {(!match.sport || match.sport === "Futebol") && historicData ? (
+                      {historicLoading ? (
+                        <div className="space-y-3 pt-1">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <div className="h-3.5 rounded bg-secondary/60 animate-pulse" style={{ width: `${25 + (i * 11) % 20}%` }} />
+                              <div className="flex-1 h-2 rounded-full bg-secondary/40 animate-pulse" />
+                              <div className="h-3.5 rounded bg-secondary/60 animate-pulse" style={{ width: `${20 + (i * 9) % 15}%` }} />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (!match.sport || match.sport === "Futebol") && historicData ? (
                         <>
                           <StatBar label="Gols Marcados" home={historicData.home.avg.avgGoalsScored} away={historicData.away.avg.avgGoalsScored} />
                           <StatBar label="Gols Sofridos" home={historicData.home.avg.avgGoalsConceded} away={historicData.away.avg.avgGoalsConceded} />
@@ -709,7 +719,11 @@ const Analytics = () => {
                           {(historicData.home.avg.avgShotsOnTarget != null || historicData.away.avg.avgShotsOnTarget != null) && <StatBar label="Chutes no Alvo" home={historicData.home.avg.avgShotsOnTarget ?? 0} away={historicData.away.avg.avgShotsOnTarget ?? 0} />}
                         </>
                       ) : (
-                        <>{avgStats.slice(0, 5).map((stat, i) => (<StatBar key={i} label={stat.label} home={stat.home} away={stat.away} unit={(stat as { unit?: string }).unit} />))}</>
+                        <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">
+                          <span className="text-2xl">📊</span>
+                          <p className="text-sm font-semibold text-foreground">Estatísticas não disponíveis</p>
+                          <p className="text-xs text-muted-foreground">Não foi possível carregar os dados históricos desta partida.</p>
+                        </div>
                       )}
                     </>
                   )}
