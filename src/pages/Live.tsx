@@ -1,14 +1,18 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BetSlip from "@/components/BetSlip";
 import LiveSportFilter from "@/components/LiveSportFilter";
+import LeagueFilter from "@/components/LeagueFilter";
 import { useLiveMatches } from "@/hooks/useMatchesData";
 import { generateMatchAnalysis } from "@/utils/matchAnalysis";
 import { useBetSlip } from "@/contexts/BetSlipContext";
 import { getMatchLiveStats, getMatchOdds, type MatchLiveStats } from "@/services/matchesService";
 import { ChevronLeft, ChevronRight, Trophy, Dumbbell, Target, Volleyball, Gamepad2, Zap, Sparkles } from "lucide-react";
+import { getFeaturedMatches, getMatchTier } from "@/utils/matchPriority";
+import { ChevronLeft, ChevronRight, Trophy, Dumbbell, Target, Volleyball, Gamepad2, Zap, Flame, Star, Sparkles } from "lucide-react";
 
 /* ── helpers ───────────────────────────────────── */
 
@@ -175,6 +179,7 @@ function LiveMatchCard({ match, realStats }: { match: any; realStats?: MatchLive
     e.stopPropagation();
     addSelection({
       id: `${match.id}-${label}`,
+      matchId: match.id,
       league: match.league,
       teamA: match.teamA,
       teamB: match.teamB,
@@ -342,9 +347,32 @@ const Live = () => {
   const searchParams = new URLSearchParams(window.location.search);
   const sportParam = searchParams.get("sport");
   const [activeSport, setActiveSport] = useState(sportParam || "Todos");
+  const [selectedLeagues, setSelectedLeagues] = useState<Set<string>>(new Set());
+
+  const toggleLeague = useCallback((league: string) => {
+    setSelectedLeagues((prev) => {
+      const next = new Set(prev);
+      if (next.has(league)) next.delete(league);
+      else next.add(league);
+      return next;
+    });
+  }, []);
+
+  const clearLeagues = useCallback(() => setSelectedLeagues(new Set()), []);
+
+  // Reset league filter when sport changes
+  useEffect(() => {
+    setSelectedLeagues(new Set());
+  }, [activeSport]);
+
   const { matches: liveMatches } = useLiveMatches();
   const navigate = useNavigate();
   const tickerRef = useRef<HTMLDivElement>(null);
+  const featuredScrollRef = useRef<HTMLDivElement>(null);
+
+  // Priority-based featured live matches
+  const featuredLive = useMemo(() => getFeaturedMatches(liveMatches), [liveMatches]);
+  const featuredTier = featuredLive.length > 0 ? getMatchTier(featuredLive[0]) : 0;
 
   // ── Real live stats for each match ──
   const [liveStatsMap, setLiveStatsMap] = useState<Record<string, MatchLiveStats | null>>({});
@@ -371,18 +399,22 @@ const Live = () => {
   }, [liveMatches, fetchAllLiveStats]);
 
   const sportCounts = useMemo(() => {
-    const counts: Record<string, number> = { Todos: liveMatches.length };
+    const counts: Record<string, number> = {
+      Todos: liveMatches.length,
+      ...(featuredLive.length > 0 ? { Destaques: featuredLive.length } : {}),
+    };
     liveMatches.forEach((match) => {
       const sport = match.sport || "Outro";
       counts[sport] = (counts[sport] || 0) + 1;
     });
     return counts;
-  }, [liveMatches]);
+  }, [liveMatches, featuredLive]);
 
   const filteredMatches = useMemo(() => {
+    if (activeSport === "Destaques") return featuredLive;
     if (activeSport === "Todos") return liveMatches;
     return liveMatches.filter((match) => match.sport === activeSport);
-  }, [activeSport, liveMatches]);
+  }, [activeSport, liveMatches, featuredLive]);
 
   // Group matches by league (SofaScore pattern)
   const matchesByLeague = useMemo(() => {
@@ -394,6 +426,18 @@ const Live = () => {
     });
     return Object.entries(groups);
   }, [filteredMatches]);
+
+  // League entries for the filter panel
+  const leagueEntries = useMemo(
+    () => matchesByLeague.map(([name, matches]) => ({ name, count: matches.length })),
+    [matchesByLeague]
+  );
+
+  // Apply league filter (empty set = show all)
+  const displayedLeagues = useMemo(() => {
+    if (selectedLeagues.size === 0) return matchesByLeague;
+    return matchesByLeague.filter(([league]) => selectedLeagues.has(league));
+  }, [matchesByLeague, selectedLeagues]);
 
   const scrollTicker = (dir: number) => {
     tickerRef.current?.scrollBy({ left: dir * 200, behavior: "smooth" });
@@ -451,10 +495,88 @@ const Live = () => {
           />
         </div>
 
+        {/* ── FEATURED LIVE SECTION ─────────────── */}
+        {featuredLive.length > 0 && activeSport !== "Destaques" && (
+          <div className="px-4 pb-2">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                {featuredTier === 1
+                  ? <Flame className="w-4 h-4 text-orange-400" />
+                  : <Star className="w-4 h-4 text-yellow-400" />}
+                <h2 className="text-sm font-black text-foreground uppercase tracking-wide">Destaques ao Vivo</h2>
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={featuredTier === 1
+                    ? { background: "rgba(251,146,60,0.15)", color: "rgb(251,146,60)" }
+                    : { background: "hsl(var(--secondary))", color: "hsl(var(--muted-foreground))" }}
+                >
+                  {featuredTier === 1 ? "🔥 Elite" : "⭐ Importantes"}
+                </span>
+              </div>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => featuredScrollRef.current?.scrollBy({ left: -320, behavior: "smooth" })}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => featuredScrollRef.current?.scrollBy({ left: 320, behavior: "smooth" })}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div
+              ref={featuredScrollRef}
+              className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory"
+              style={{ scrollbarWidth: "none" }}
+            >
+              {featuredLive.map((match, i) => (
+                <div
+                  key={match.id}
+                  className="flex-shrink-0 w-[280px] snap-start animate-in fade-in slide-in-from-bottom-2"
+                  style={{ animationDelay: `${i * 50}ms`, animationFillMode: "both", animationDuration: "350ms" }}
+                >
+                  <LiveMatchCard match={match} />
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 border-t border-border/30" />
+          </div>
+        )}
+
+        {/* ── LEAGUE FILTER (mobile) ── */}
+        {leagueEntries.length > 0 && (
+          <div className="px-4 pb-2 lg:hidden">
+            <LeagueFilter
+              leagues={leagueEntries}
+              selectedLeagues={selectedLeagues}
+              onToggle={toggleLeague}
+              onClear={clearLeagues}
+              isMobile
+            />
+          </div>
+        )}
+
         {/* ── MATCHES BY LEAGUE (SofaScore pattern) ── */}
-        <div className="px-4 pt-4 space-y-6">
-          {matchesByLeague.length > 0 ? (
-            matchesByLeague.map(([league, matches]) => {
+        <div className="px-4 pt-4 flex gap-6 items-start">
+          {/* Desktop League Filter Sidebar */}
+          {leagueEntries.length > 0 && (
+            <aside className="hidden lg:block w-56 flex-shrink-0">
+              <LeagueFilter
+                leagues={leagueEntries}
+                selectedLeagues={selectedLeagues}
+                onToggle={toggleLeague}
+                onClear={clearLeagues}
+              />
+            </aside>
+          )}
+
+          <div className="flex-1 min-w-0 space-y-6">
+          {displayedLeagues.length > 0 ? (
+            displayedLeagues.map(([league, matches]) => {
               const SportIcon = sportIcons[matches[0]?.sport || "Futebol"] || Trophy;
               return (
                 <div key={league}>
@@ -486,12 +608,15 @@ const Live = () => {
           ) : (
             <div className="flex flex-col items-center justify-center py-20">
               <Zap className="w-8 h-8 text-muted-foreground/30 mb-3" />
-              <p className="text-muted-foreground font-medium mb-1">Nenhum jogo ao vivo</p>
+              <p className="text-muted-foreground font-medium mb-1">
+                {selectedLeagues.size > 0 ? "Nenhuma liga selecionada com jogos" : "Nenhum jogo ao vivo"}
+              </p>
               <p className="text-muted-foreground/60 text-sm">
-                Selecione outro esporte ou volte mais tarde
+                {selectedLeagues.size > 0 ? "Ajuste o filtro de ligas" : "Selecione outro esporte ou volte mais tarde"}
               </p>
             </div>
           )}
+          </div>
         </div>
       </main>
 

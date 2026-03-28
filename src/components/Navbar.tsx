@@ -190,7 +190,7 @@ const Navbar = () => {
                     {results!.live.map((m) => (
                       <button
                         key={m.id}
-                        onClick={() => go(`/ao-vivo?sport=${encodeURIComponent(m.sport ?? "Todos")}`)}
+                        onClick={() => go(`/analises/${m.id}`)}
                         className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-secondary transition-colors text-left"
                       >
                         <div>

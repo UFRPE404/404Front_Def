@@ -101,6 +101,7 @@ const BetDetailModal = ({ bet, isOpen, onClose }: BetDetailModalProps) => {
     e.stopPropagation();
     addSelection({
       id: `${bet.matchId}-${bet.pick}`,
+      matchId: bet.matchId,
       league: bet.league,
       teamA: bet.teamA,
       teamB: bet.teamB,

@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Zap } from "lucide-react";
 import SuggestedBetCard from "./SuggestedBetCard";
 import { useAllSuggestedBets } from "@/hooks/useSuggestedBets";
 
@@ -51,12 +51,33 @@ const SuggestionsCarousel = () => {
         style={{ scrollbarWidth: "none" }}
       >
         {loading ? (
-          Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={`skeleton-${i}`}
-              className="flex-shrink-0 w-[280px] h-[160px] rounded-xl bg-secondary/50 animate-pulse"
-            />
-          ))
+          <div className="flex items-center gap-5 py-4 px-1">
+            {/* Spinner */}
+            <div className="relative flex-shrink-0">
+              <div className="w-10 h-10 rounded-full border-3 border-secondary" />
+              <div className="absolute inset-0 w-10 h-10 rounded-full border-3 border-transparent border-t-primary animate-spin" style={{ borderWidth: 3 }} />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Zap className="w-4 h-4 text-primary" />
+              </div>
+            </div>
+            {/* Message */}
+            <div className="flex flex-col gap-0.5">
+              <p className="text-sm font-semibold text-foreground leading-tight">
+                Farejando as melhores odds do mercado...
+              </p>
+              <p className="text-xs text-muted-foreground">Suas picks de maior valor estão chegando</p>
+            </div>
+            {/* Skeleton cards */}
+            <div className="flex gap-3 overflow-hidden ml-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex-shrink-0 w-[220px] h-[120px] rounded-xl bg-secondary/50 animate-pulse"
+                  style={{ animationDelay: `${i * 150}ms` }}
+                />
+              ))}
+            </div>
+          </div>
         ) : bets.length === 0 ? (
           <div className="flex items-center justify-center w-full py-6 text-muted-foreground text-sm">
             Nenhuma sugestão disponível no momento.

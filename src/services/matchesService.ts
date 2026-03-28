@@ -276,6 +276,22 @@ export async function getMatchLineups(matchId: string): Promise<any | null> {
   }
 }
 
+export interface ApiMatchEvent {
+  minute: number;
+  type: "goal" | "yellow" | "red" | "substitution";
+  team: "home" | "away";
+  player: string;
+}
+
+export async function getMatchEvents(matchId: string): Promise<{ events: ApiMatchEvent[]; homeTeam: string; awayTeam: string } | null> {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/match/${matchId}/events`);
+    return response.data;
+  } catch {
+    return null;
+  }
+}
+
 export async function getTeamHistory(teamId: string, page = 1): Promise<any[]> {
   try {
     const response = await axios.get(`${API_BASE_URL}/api/team/${teamId}/history`, {
@@ -348,10 +364,6 @@ export async function getPlayerConditionalAnalysis(playerId: string, body: {
 
 export async function getMatchStatistics(matchId: string): Promise<MatchStatistics | null> {
   return Promise.resolve(null);
-}
-
-export async function getMatchEvents(matchId: string): Promise<MatchEvent[]> {
-  return Promise.resolve([]);
 }
 
 // ─── Full Odds types ─────────────────────────────────────────────────────────

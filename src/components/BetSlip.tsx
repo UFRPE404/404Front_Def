@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { X, ChevronUp, Trash2, ReceiptText } from "lucide-react";
 import { useBetSlip } from "@/contexts/BetSlipContext";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button";
 const BetSlip = () => {
   const [expanded, setExpanded] = useState(false);
   const { selections, removeSelection, clearAll } = useBetSlip();
+  const navigate = useNavigate();
 
   const totalOdds = selections.reduce((acc, s) => acc * s.odds, 1);
 
@@ -59,14 +61,34 @@ const BetSlip = () => {
                   <div key={sel.id} className="px-4 py-3 flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs text-muted-foreground truncate">{sel.league}</p>
-                      <p className="text-sm font-semibold text-foreground truncate">
-                        {sel.teamA} vs {sel.teamB}
-                      </p>
+                      {sel.matchId ? (
+                        <button
+                          onClick={() => { navigate(`/analises/${encodeURIComponent(sel.matchId!)}`); setExpanded(false); }}
+                          className="text-sm font-semibold text-foreground hover:text-primary transition-colors truncate text-left w-full"
+                        >
+                          {sel.teamA} vs {sel.teamB}
+                        </button>
+                      ) : (
+                        <p className="text-sm font-semibold text-foreground truncate">{sel.teamA} vs {sel.teamB}</p>
+                      )}
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs font-medium text-primary bg-primary/15 px-2 py-0.5 rounded">
                           {sel.pick}
                         </span>
                         <span className="text-xs font-bold text-foreground">{sel.odds.toFixed(2)}</span>
+                        {sel.matchId && (
+                          <a
+                            href="https://esportesdasorte.bet.br/ptb/bet/sports"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center gap-1 text-[10px] font-bold text-amber-400 hover:text-amber-300 transition-colors ml-auto shrink-0"
+                            title="Apostar na Esportes da Sorte"
+                          >
+                            <div className="w-3.5 h-3.5 rounded bg-amber-500/20 flex items-center justify-center text-[8px] font-black text-amber-400">E</div>
+                            da sorte
+                          </a>
+                        )}
                       </div>
                     </div>
                     <button
