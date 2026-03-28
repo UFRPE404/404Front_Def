@@ -827,12 +827,13 @@ const Analytics = () => {
               </RevealSection>
             )}
 
-            {/* Season / Last 10 stats ou Live Stats */}
-            <RevealSection delay={match.live ? 40 : 0}>
+            {/* Season / Last 10 stats (apenas quando NÃO é ao vivo) */}
+            {!match.live && (
+            <RevealSection delay={0}>
               <SectionCard>
                 <div className="flex items-center justify-between mb-1">
                   <SectionTitle icon={BarChart3}>
-                    {match.live ? `Estatisticas ao Vivo${liveStats?.minute ? ` — ${liveStats.minute}'` : ""}` : "Media - Ultimos 10 Jogos"}
+                    {"Media - Ultimos 10 Jogos"}
                   </SectionTitle>
                   <span className="text-[10px] text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">{match.sport || "Futebol"}</span>
                 </div>
@@ -851,64 +852,6 @@ const Analytics = () => {
                 {/* Stats grouped by category */}
                 {(() => {
                   const sport = match.sport || "Futebol";
-
-                  // ── Jogo ao vivo: estatísticas em tempo real ──
-                  if (match.live) {
-                    if (liveStatsFailed || !liveStats) {
-                      return (
-                        <p className="text-xs text-muted-foreground text-center py-6">
-                          Nao foi possivel obter dados das estatisticas da partida
-                        </p>
-                      );
-                    }
-                    const h = liveStats.home;
-                    const a = liveStats.away;
-                    const liveCategories = [
-                      {
-                        title: "Ataque",
-                        rows: [
-                          ...(h.shots != null || a.shots != null ? [{ label: "Finalizacoes", home: h.shots ?? 0, away: a.shots ?? 0, unit: undefined }] : []),
-                          ...(h.shotsOnTarget != null || a.shotsOnTarget != null ? [{ label: "Chutes no Alvo", home: h.shotsOnTarget ?? 0, away: a.shotsOnTarget ?? 0, unit: undefined }] : []),
-                          ...(h.attacks != null || a.attacks != null ? [{ label: "Ataques", home: h.attacks ?? 0, away: a.attacks ?? 0, unit: undefined }] : []),
-                          ...(h.dangerousAttacks != null || a.dangerousAttacks != null ? [{ label: "Ataques Perigosos", home: h.dangerousAttacks ?? 0, away: a.dangerousAttacks ?? 0, unit: undefined }] : []),
-                        ],
-                      },
-                      {
-                        title: "Posse",
-                        rows: [
-                          ...(h.possession != null || a.possession != null ? [{ label: "Posse de Bola %", home: h.possession ?? 0, away: a.possession ?? 0, unit: "%" }] : []),
-                        ],
-                      },
-                      {
-                        title: "Defesa",
-                        rows: [
-                          ...(h.saves != null || a.saves != null ? [{ label: "Defesas Goleiro", home: h.saves ?? 0, away: a.saves ?? 0, unit: undefined }] : []),
-                        ],
-                      },
-                      {
-                        title: "Disciplina & Outros",
-                        rows: [
-                          ...(h.corners != null || a.corners != null ? [{ label: "Escanteios", home: h.corners ?? 0, away: a.corners ?? 0, unit: undefined }] : []),
-                          ...(h.yellowCards != null || a.yellowCards != null ? [{ label: "Cartoes Amarelos", home: h.yellowCards ?? 0, away: a.yellowCards ?? 0, unit: undefined }] : []),
-                          ...(h.redCards != null || a.redCards != null ? [{ label: "Cartoes Vermelhos", home: h.redCards ?? 0, away: a.redCards ?? 0, unit: undefined }] : []),
-                        ],
-                      },
-                    ].filter(cat => cat.rows.length > 0);
-
-                    return liveCategories.map((cat, ci) => (
-                      <div key={ci} className={ci > 0 ? "mt-4" : ""}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-1 h-3.5 rounded-full bg-primary" />
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{cat.title}</span>
-                        </div>
-                        <div className="space-y-0">
-                          {cat.rows.map((stat, i) => (
-                            <StatBar key={i} label={stat.label} home={stat.home} away={stat.away} unit={stat.unit} />
-                          ))}
-                        </div>
-                      </div>
-                    ));
-                  }
 
                   // ── Futebol com dados reais da API (histórico) ──
                   if (sport === "Futebol" && historicData) {
@@ -996,6 +939,7 @@ const Analytics = () => {
                 })()}
               </SectionCard>
             </RevealSection>
+            )}
 
             {/* Form guide — Bet365 last 5 results style */}
             <RevealSection delay={match.live ? 80 : 40}>
