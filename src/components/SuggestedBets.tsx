@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Zap } from "lucide-react";
 import SuggestedBetCard from "./SuggestedBetCard";
 import { useDreamBets, useBestOfDayBets } from "@/hooks/useSuggestedBets";
 
@@ -62,12 +62,28 @@ const SuggestedBets = () => {
         style={{ scrollbarWidth: "none" }}
       >
         {loading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={`skeleton-${i}`}
-              className="flex-shrink-0 w-[300px] h-[180px] rounded-xl bg-secondary/50 animate-pulse snap-start"
-            />
-          ))
+          <div className="flex flex-col items-center justify-center py-12 gap-5">
+            <div className="relative">
+              <div className="w-14 h-14 rounded-full border-4 border-secondary" />
+              <div className="absolute inset-0 w-14 h-14 rounded-full border-4 border-transparent border-t-primary animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-primary" />
+              </div>
+            </div>
+            <div className="text-center space-y-1">
+              <p className="text-base font-bold text-foreground">Farejando as melhores odds do mercado...</p>
+              <p className="text-sm text-muted-foreground">Cruzando dados de centenas de partidas para você</p>
+            </div>
+            <div className="flex gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="w-[260px] h-[160px] rounded-xl bg-secondary/50 animate-pulse flex-shrink-0"
+                  style={{ animationDelay: `${i * 120}ms` }}
+                />
+              ))}
+            </div>
+          </div>
         ) : bets.length === 0 ? (
           <div className="flex items-center justify-center w-full py-8 text-muted-foreground text-sm">
             Nenhuma sugestão disponível no momento. Verifique se o servidor está rodando.

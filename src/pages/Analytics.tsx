@@ -381,6 +381,7 @@ const Analytics = () => {
   const [fullOdds, setFullOdds] = useState<FullOddsData | null>(null);
   const [h2hApiData, setH2hApiData] = useState<H2HApiData | null>(null);
   const [historicData, setHistoricData] = useState<MatchHistoricData | null>(null);
+  const [historicLoading, setHistoricLoading] = useState(false);
   const [liveStats, setLiveStats] = useState<MatchLiveStats | null>(null);
   const [liveStatsFailed, setLiveStatsFailed] = useState(false);
   const [oddsLoading, setOddsLoading] = useState(false);
@@ -428,7 +429,8 @@ const Analytics = () => {
     setH2hLoading(true);
     getMatchH2H(match.id).then(setH2hApiData).finally(() => setH2hLoading(false));
     if (!match?.live) {
-      getMatchHistoric(match.id, 10).then(setHistoricData).catch(() => setHistoricData(null));
+      setHistoricLoading(true);
+      getMatchHistoric(match.id, 10).then(setHistoricData).catch(() => setHistoricData(null)).finally(() => setHistoricLoading(false));
     }
   }, [match?.id]);
 
@@ -910,6 +912,34 @@ const Analytics = () => {
                     ));
                   }
 
+                  // ── Loading historicData ──
+                  if (!match.live && historicLoading) {
+                    return (
+                      <div className="flex flex-col items-center justify-center py-10 gap-4">
+                        <div className="relative">
+                          <div className="w-14 h-14 rounded-full border-4 border-secondary" />
+                          <div className="absolute inset-0 w-14 h-14 rounded-full border-4 border-transparent border-t-primary animate-spin" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-lg">📊</span>
+                          </div>
+                        </div>
+                        <div className="text-center space-y-1">
+                          <p className="text-sm font-semibold text-foreground">Carregando estatísticas</p>
+                          <p className="text-xs text-muted-foreground">Buscando dados dos últimos 10 jogos...</p>
+                        </div>
+                        <div className="w-full space-y-2 px-2">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <div className="h-4 rounded bg-secondary/60 animate-pulse" style={{ width: `${30 + (i * 13) % 25}%` }} />
+                              <div className="flex-1 h-2 rounded-full bg-secondary/40 animate-pulse" />
+                              <div className="h-4 rounded bg-secondary/60 animate-pulse" style={{ width: `${25 + (i * 17) % 20}%` }} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+
                   // ── Futebol com dados reais da API (histórico) ──
                   if (sport === "Futebol" && historicData) {
                     const h = historicData.home.avg;
@@ -960,39 +990,16 @@ const Analytics = () => {
                     ));
                   }
 
-                  // ── Fallback mock (outros esportes ou enquanto carrega) ──
-                  const categories: { title: string; stats: typeof avgStats }[] = [];
-                  if (sport === "Futebol") {
-                    categories.push({ title: "Ataque", stats: avgStats.filter(s => ["Gols Marcados", "Finalizacoes", "Chutes no Alvo"].includes(s.label)) });
-                    categories.push({ title: "Posse & Passes", stats: avgStats.filter(s => ["Posse de Bola %", "Passes por Jogo", "Precisao Passe %"].includes(s.label)) });
-                    categories.push({ title: "Defesa", stats: avgStats.filter(s => ["Gols Sofridos", "Desarmes", "Defesas Goleiro"].includes(s.label)) });
-                    categories.push({ title: "Disciplina & Outros", stats: avgStats.filter(s => ["Faltas Cometidas", "Cartoes Amarelos", "Escanteios", "Impedimentos"].includes(s.label)) });
-                  } else if (sport === "Basquete") {
-                    categories.push({ title: "Pontuacao", stats: avgStats.filter(s => ["Pontos por Jogo", "FG%", "3P%", "FT%"].includes(s.label)) });
-                    categories.push({ title: "Rebotes", stats: avgStats.filter(s => ["Rebotes por Jogo", "Rebotes Ofensivos", "Rebotes Defensivos"].includes(s.label)) });
-                    categories.push({ title: "Jogo", stats: avgStats.filter(s => ["Assistencias por Jogo", "Roubos de Bola", "Bloqueios", "Turnovers", "Faltas por Jogo"].includes(s.label)) });
-                  } else if (sport === "Tenis") {
-                    categories.push({ title: "Saque", stats: avgStats.filter(s => ["Aces por Partida", "Duplas Faltas", "1o Saque %", "Veloc. Media Saque"].includes(s.label)) });
-                    categories.push({ title: "Retorno", stats: avgStats.filter(s => s.label.includes("Saque %") || s.label.includes("Break Points") || s.label.includes("Games")) });
-                    categories.push({ title: "Performance", stats: avgStats.filter(s => ["Winners por Partida", "Erros nao Forcados", "Tie-breaks Vencidos %"].includes(s.label)) });
-                  } else {
-                    categories.push({ title: "Ataque", stats: avgStats.filter(s => ["Pontos por Set", "Ataques por Jogo", "Eficiencia Ataque %", "Aces por Jogo"].includes(s.label)) });
-                    categories.push({ title: "Defesa", stats: avgStats.filter(s => ["Bloqueios por Jogo", "Recepcao Positiva %", "Defesas por Jogo"].includes(s.label)) });
-                    categories.push({ title: "Geral", stats: avgStats.filter(s => ["Erros por Jogo", "Pontos de Saque", "Sets Vencidos %"].includes(s.label)) });
-                  }
-                  return categories.map((cat, ci) => (
-                    <div key={ci} className={ci > 0 ? "mt-4" : ""}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-1 h-3.5 rounded-full bg-primary" />
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{cat.title}</span>
-                      </div>
-                      <div className="space-y-0">
-                        {cat.stats.map((stat, i) => (
-                          <StatBar key={i} label={stat.label} home={stat.home} away={stat.away} unit={(stat as { unit?: string }).unit} />
-                        ))}
-                      </div>
+                  // ── Dados não disponíveis (histórico ausente, esporte sem suporte) ──
+                  return (
+                    <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
+                      <span className="text-3xl">📉</span>
+                      <p className="text-sm font-semibold text-foreground">Dados históricos indisponíveis</p>
+                      <p className="text-xs text-muted-foreground max-w-xs">
+                        Não encontramos estatísticas dos últimos jogos desta partida. Tente novamente em instantes.
+                      </p>
                     </div>
-                  ));
+                  );
                 })()}
               </SectionCard>
             </RevealSection>

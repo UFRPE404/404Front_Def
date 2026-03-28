@@ -7,7 +7,8 @@ import LiveSportFilter from "@/components/LiveSportFilter";
 import { useLiveMatches } from "@/hooks/useMatchesData";
 import { generateMatchAnalysis } from "@/utils/matchAnalysis";
 import { useBetSlip } from "@/contexts/BetSlipContext";
-import { ChevronLeft, ChevronRight, Trophy, Dumbbell, Target, Volleyball, Gamepad2, Zap, Sparkles } from "lucide-react";
+import { getFeaturedMatches, getMatchTier } from "@/utils/matchPriority";
+import { ChevronLeft, ChevronRight, Trophy, Dumbbell, Target, Volleyball, Gamepad2, Zap, Flame, Star, Sparkles } from "lucide-react";
 
 /* ── helpers ───────────────────────────────────── */
 
@@ -279,20 +280,29 @@ const Live = () => {
   const { matches: liveMatches } = useLiveMatches();
   const navigate = useNavigate();
   const tickerRef = useRef<HTMLDivElement>(null);
+  const featuredScrollRef = useRef<HTMLDivElement>(null);
+
+  // Priority-based featured live matches
+  const featuredLive = useMemo(() => getFeaturedMatches(liveMatches), [liveMatches]);
+  const featuredTier = featuredLive.length > 0 ? getMatchTier(featuredLive[0]) : 0;
 
   const sportCounts = useMemo(() => {
-    const counts: Record<string, number> = { Todos: liveMatches.length };
+    const counts: Record<string, number> = {
+      Todos: liveMatches.length,
+      ...(featuredLive.length > 0 ? { Destaques: featuredLive.length } : {}),
+    };
     liveMatches.forEach((match) => {
       const sport = match.sport || "Outro";
       counts[sport] = (counts[sport] || 0) + 1;
     });
     return counts;
-  }, [liveMatches]);
+  }, [liveMatches, featuredLive]);
 
   const filteredMatches = useMemo(() => {
+    if (activeSport === "Destaques") return featuredLive;
     if (activeSport === "Todos") return liveMatches;
     return liveMatches.filter((match) => match.sport === activeSport);
-  }, [activeSport, liveMatches]);
+  }, [activeSport, liveMatches, featuredLive]);
 
   // Group matches by league (SofaScore pattern)
   const matchesByLeague = useMemo(() => {
@@ -360,6 +370,58 @@ const Live = () => {
             sportCounts={sportCounts}
           />
         </div>
+
+        {/* ── FEATURED LIVE SECTION ─────────────── */}
+        {featuredLive.length > 0 && activeSport !== "Destaques" && (
+          <div className="px-4 pb-2">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                {featuredTier === 1
+                  ? <Flame className="w-4 h-4 text-orange-400" />
+                  : <Star className="w-4 h-4 text-yellow-400" />}
+                <h2 className="text-sm font-black text-foreground uppercase tracking-wide">Destaques ao Vivo</h2>
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={featuredTier === 1
+                    ? { background: "rgba(251,146,60,0.15)", color: "rgb(251,146,60)" }
+                    : { background: "hsl(var(--secondary))", color: "hsl(var(--muted-foreground))" }}
+                >
+                  {featuredTier === 1 ? "🔥 Elite" : "⭐ Importantes"}
+                </span>
+              </div>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => featuredScrollRef.current?.scrollBy({ left: -320, behavior: "smooth" })}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => featuredScrollRef.current?.scrollBy({ left: 320, behavior: "smooth" })}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div
+              ref={featuredScrollRef}
+              className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory"
+              style={{ scrollbarWidth: "none" }}
+            >
+              {featuredLive.map((match, i) => (
+                <div
+                  key={match.id}
+                  className="flex-shrink-0 w-[280px] snap-start animate-in fade-in slide-in-from-bottom-2"
+                  style={{ animationDelay: `${i * 50}ms`, animationFillMode: "both", animationDuration: "350ms" }}
+                >
+                  <LiveMatchCard match={match} />
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 border-t border-border/30" />
+          </div>
+        )}
 
         {/* ── MATCHES BY LEAGUE (SofaScore pattern) ── */}
         <div className="px-4 pt-4 space-y-6">

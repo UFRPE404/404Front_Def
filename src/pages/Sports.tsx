@@ -4,8 +4,9 @@ import Footer from "@/components/Footer";
 import BetSlip from "@/components/BetSlip";
 import MatchCard from "@/components/MatchCard";
 import LeagueFilter from "@/components/LeagueFilter";
-import { useMatches, useSports, useFeaturedMatchIds } from "@/hooks/useMatchesData";
-import { Trophy, ChevronLeft, ChevronRight, Calendar, Loader2, Star, Sparkles } from "lucide-react";
+import { useMatches, useSports } from "@/hooks/useMatchesData";
+import { getFeaturedMatches, getMatchTier } from "@/utils/matchPriority";
+import { Trophy, ChevronLeft, ChevronRight, Calendar, Loader2, Star, Flame } from "lucide-react";
 
 function formatDate(date: Date, index: number): string {
   if (index === 0) return "Hoje";
@@ -45,7 +46,6 @@ const Sports = () => {
   // Fetch data from service layer
   const { matches: allMatches, loading } = useMatches();
   const { sports: uniqueSports } = useSports();
-  const { featuredIds, loadingFeatured } = useFeaturedMatchIds();
 
   // Get sport counts
   const sportCounts = useMemo(() => {
@@ -82,25 +82,17 @@ const Sports = () => {
     });
   }, [allMatches, activeSport, activeDay, nextDays]);
 
-  // Featured matches: AI-selected best matches of the day
-  const featuredMatches = useMemo(() => {
-    if (featuredIds.length === 0) return [];
-    const idSet = new Set(featuredIds);
-    // Filter from today's matches using AI-selected IDs
-    const dayLabel = formatDate(nextDays[activeDay], activeDay);
-    const dayMatches = allMatches.filter((m) => {
-      if (!m.date) return activeDay === 0;
-      return m.date === dayLabel;
-    });
-    // Preserve AI ordering
-    const matchMap = new Map(dayMatches.map(m => [m.id, m]));
-    const ordered = featuredIds
-      .filter(id => matchMap.has(id) || idSet.has(id))
-      .map(id => matchMap.get(id))
-      .filter(Boolean) as typeof dayMatches;
-    // If AI picks are for today but user views another day, show nothing
-    return ordered;
-  }, [allMatches, activeDay, nextDays, featuredIds]);
+  // Featured matches: tier-based priority (Tier 1 elite → Tier 2 important)
+  const featuredMatches = useMemo(
+    () => getFeaturedMatches(filteredMatches),
+    [filteredMatches]
+  );
+
+  // Tier label for the featured section header
+  const featuredTier = useMemo(() => {
+    if (featuredMatches.length === 0) return 0;
+    return getMatchTier(featuredMatches[0]) as 1 | 2 | 3;
+  }, [featuredMatches]);
 
   // Group matches by league
   const matchesByLeague = useMemo(() => {
@@ -264,15 +256,25 @@ const Sports = () => {
 
         {!loading && (
           <>
-        {/* Featured Matches - AI Selected */}
+        {/* Featured Matches - Priority-based */}
         {featuredMatches.length > 0 && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Star className="w-5 h-5 text-yellow-400" />
-                <h2 className="text-lg font-bold text-foreground">Partidas Destaques</h2>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/20 text-primary flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" /> IA
+                {featuredTier === 1 ? (
+                  <Flame className="w-5 h-5 text-orange-400" />
+                ) : (
+                  <Star className="w-5 h-5 text-yellow-400" />
+                )}
+                <h2 className="text-lg font-bold text-foreground">Partidas em Destaque</h2>
+                <span
+                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                  style={featuredTier === 1
+                    ? { background: "rgba(251,146,60,0.15)", color: "rgb(251,146,60)" }
+                    : { background: "hsl(var(--secondary))", color: "hsl(var(--muted-foreground))" }
+                  }
+                >
+                  {featuredTier === 1 ? "🔥 Elite" : "⭐ Importantes"}
                 </span>
               </div>
               <div className="flex gap-1">
@@ -309,14 +311,6 @@ const Sports = () => {
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Loading featured matches */}
-        {activeDay === 0 && loadingFeatured && featuredMatches.length === 0 && !loading && (
-          <div className="mb-8 flex items-center gap-3 px-4 py-3 rounded-lg bg-secondary/50">
-            <Loader2 className="w-4 h-4 text-primary animate-spin" />
-            <span className="text-sm text-muted-foreground">Selecionando destaques com IA...</span>
           </div>
         )}
 
