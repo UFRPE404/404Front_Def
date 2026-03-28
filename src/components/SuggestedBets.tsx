@@ -9,7 +9,10 @@ const SuggestedBets = () => {
   const dreamScrollRef = useRef<HTMLDivElement>(null);
   const bestScrollRef = useRef<HTMLDivElement>(null);
 
-  const scroll = (ref: React.RefObject<HTMLDivElement>, dir: "left" | "right") => {
+  const scroll = (
+    ref: React.RefObject<HTMLDivElement>,
+    dir: "left" | "right",
+  ) => {
     if (!ref.current) return;
     ref.current.scrollBy({
       left: dir === "left" ? -340 : 340,
@@ -70,7 +73,8 @@ const SuggestedBets = () => {
           ))
         ) : bets.length === 0 ? (
           <div className="flex items-center justify-center w-full py-8 text-muted-foreground text-sm">
-            Nenhuma sugestão disponível no momento. Verifique se o servidor está rodando.
+            Nenhuma sugestão disponível no momento. Verifique se o servidor está
+            rodando.
           </div>
         ) : (
           bets.map((bet, i) => (
@@ -102,8 +106,8 @@ const SuggestedBets = () => {
         loading={dreamLoading}
       />
       <CarouselSection
-        title="⭐ Melhores do Dia"
-        description="Nossas principais picks para hoje"
+        title="⭐ Melhores da Semana"
+        description="Nossas principais picks para a semana"
         bets={bestOfDayBets}
         scrollRef={bestScrollRef}
         theme="best"
