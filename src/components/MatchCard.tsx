@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { generateMatchAnalysis } from "@/utils/matchAnalysis";
 import { useMemo, useState, useEffect, useRef } from "react";
-import { getMatchOdds, getMatchH2H, type H2HApiData } from "@/services/matchesService";
+import { getMatchOdds, getMatchH2H, type H2HApiData, type MatchLiveStats } from "@/services/matchesService";
 
 interface MatchProps {
   id: string;
@@ -20,6 +20,7 @@ interface MatchProps {
   sport?: string;
   period?: string;
   date?: string;
+  liveStats?: MatchLiveStats | null;
 }
 
 const INSIGHT_COLORS = ["--insight-positive", "--insight-warning", "--insight-info"];
@@ -171,16 +172,17 @@ function StatRow({ label, valueA, valueB, color }: { label: string; valueA: stri
   );
 }
 
-const MatchCard = ({ 
-  id, league, time, live, teamA, teamB, scoreA, scoreB, 
-  cornersA = 0, cornersB = 0, 
-  cardsA = { yellow: 0, red: 0 }, cardsB = { yellow: 0, red: 0 }, 
-  odds: initialOdds, sport, period, date
+const MatchCard = ({
+  id, league, time, live, teamA, teamB, scoreA, scoreB,
+  cornersA = 0, cornersB = 0,
+  cardsA = { yellow: 0, red: 0 }, cardsB = { yellow: 0, red: 0 },
+  odds: initialOdds, sport, period, date, liveStats
 }: MatchProps) => {
   const navigate = useNavigate();
 
   // Progressive odds loading: fetch real odds when card becomes visible
   const [realOdds, setRealOdds] = useState<[number, number, number] | null>(null);
+  const [oddsFailed, setOddsFailed] = useState(false);
   const [h2hData, setH2hData] = useState<H2HApiData | null>(null);
   const [h2hLoading, setH2hLoading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -190,7 +192,7 @@ const MatchCard = ({
   const isPlaceholderOdds = initialOdds[0] === 1.50 && initialOdds[1] === 3.50 && initialOdds[2] === 4.00;
 
   useEffect(() => {
-    if (live || oddsFetched.current) return;
+    if (oddsFetched.current) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -199,11 +201,15 @@ const MatchCard = ({
           observer.disconnect();
           if (isPlaceholderOdds) {
             getMatchOdds(id).then(({ simpleOdds }) => {
-              if (simpleOdds) setRealOdds(simpleOdds);
-            });
+              if (simpleOdds) {
+                setRealOdds(simpleOdds);
+              } else {
+                setOddsFailed(true);
+              }
+            }).catch(() => setOddsFailed(true));
           }
-          // Fetch H2H lazily
-          if (!h2hFetched.current) {
+          // Fetch H2H lazily (pre-match only)
+          if (!live && !h2hFetched.current) {
             h2hFetched.current = true;
             setH2hLoading(true);
             getMatchH2H(id).then(setH2hData).finally(() => setH2hLoading(false));
@@ -220,18 +226,41 @@ const MatchCard = ({
   const odds = realOdds ?? initialOdds;
   const matchAnalysis = generateMatchAnalysis(time, scoreA, scoreB, odds, sport, live);
 
-  // Live: deterministic in-match stats
-  const liveStats = useMemo(() => generateLiveStats(teamA, teamB, odds, sport), [teamA, teamB, odds, sport]);
+  // Live: use real API stats when available, fall back to generated stats
+  const liveStatRows = useMemo(() => {
+    if (liveStats && sport !== "Basquete" && sport !== "Tênis" && sport !== "Vôlei") {
+      const home = liveStats.home;
+      const away = liveStats.away;
+      return [
+        {
+          label: "Posse",
+          a: home.possession != null ? `${home.possession}%` : "—",
+          b: away.possession != null ? `${away.possession}%` : "—",
+        },
+        {
+          label: "Finalizações",
+          a: home.shots != null ? home.shots : "—",
+          b: away.shots != null ? away.shots : "—",
+        },
+        {
+          label: "Faltas",
+          a: home.yellowCards != null ? home.yellowCards : "—",
+          b: away.yellowCards != null ? away.yellowCards : "—",
+        },
+      ];
+    }
+    return null;
+  }, [teamA, teamB, odds, sport, liveStats]);
 
   // H2H derived data
   const h2hMatches = h2hData?.h2h ?? [];
   const homeForm: FormResult[] = (h2hData?.homeLastMatches ?? []).slice(0, 5).map(m => m.winner === 'home' ? 'V' : m.winner === 'draw' ? 'E' : 'D');
   const awayForm: FormResult[] = (h2hData?.awayLastMatches ?? []).slice(0, 5).map(m => m.winner === 'home' ? 'V' : m.winner === 'draw' ? 'E' : 'D');
   // AI insight sentence
-  const aiInsight = useMemo(
-    () => generateAIInsight(teamA, teamB, odds, sport, live, scoreA, scoreB),
-    [teamA, teamB, odds, sport, live, scoreA, scoreB]
-  );
+  const aiInsight = useMemo(() => {
+    if (live && !liveStats) return null;
+    return generateAIInsight(teamA, teamB, odds, sport, live, scoreA, scoreB);
+  }, [teamA, teamB, odds, sport, live, scoreA, scoreB, liveStats]);
 
   const handleCardClick = () => {
     navigate(`/analises/${encodeURIComponent(id)}`);
@@ -355,7 +384,7 @@ const MatchCard = ({
                 <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest text-center mb-0.5">
                   Estatísticas da Partida
                 </span>
-                {liveStats.map((stat, i) => (
+                {liveStatRows ? liveStatRows.map((stat, i) => (
                   <StatRow
                     key={stat.label}
                     label={stat.label}
@@ -363,7 +392,11 @@ const MatchCard = ({
                     valueB={stat.b}
                     color={INSIGHT_COLORS[i]}
                   />
-                ))}
+                )) : (
+                  <div className="flex items-center justify-center py-2">
+                    <span className="text-[11px] text-muted-foreground/50 italic">Dados não disponíveis</span>
+                  </div>
+                )}
               </div>
             ) : (
               /* ====== PRÉ-JOGO: H2H real ====== */
@@ -466,7 +499,7 @@ const MatchCard = ({
                 </span>
               </div>
               <p className="text-[11px] leading-relaxed text-muted-foreground/75 italic line-clamp-2 group-hover:line-clamp-none transition-all duration-300">
-                {aiInsight}
+                {aiInsight || "Análise não disponível"}
               </p>
             </div>
           </div>

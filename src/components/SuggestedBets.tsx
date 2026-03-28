@@ -9,7 +9,10 @@ const SuggestedBets = () => {
   const dreamScrollRef = useRef<HTMLDivElement>(null);
   const bestScrollRef = useRef<HTMLDivElement>(null);
 
-  const scroll = (ref: React.RefObject<HTMLDivElement>, dir: "left" | "right") => {
+  const scroll = (
+    ref: React.RefObject<HTMLDivElement>,
+    dir: "left" | "right",
+  ) => {
     if (!ref.current) return;
     ref.current.scrollBy({
       left: dir === "left" ? -340 : 340,
@@ -58,7 +61,7 @@ const SuggestedBets = () => {
 
       <div
         ref={ref}
-        className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory"
+        className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory items-stretch"
         style={{ scrollbarWidth: "none" }}
       >
         {loading ? (
@@ -86,13 +89,14 @@ const SuggestedBets = () => {
           </div>
         ) : bets.length === 0 ? (
           <div className="flex items-center justify-center w-full py-8 text-muted-foreground text-sm">
-            Nenhuma sugestão disponível no momento. Verifique se o servidor está rodando.
+            Nenhuma sugestão disponível no momento. Verifique se o servidor está
+            rodando.
           </div>
         ) : (
           bets.map((bet, i) => (
             <div
               key={bet.id}
-              className="flex-shrink-0 w-[300px] snap-start animate-in fade-in slide-in-from-bottom-3"
+              className="flex-shrink-0 w-[300px] snap-start animate-in fade-in slide-in-from-bottom-3 h-auto self-stretch"
               style={{
                 animationDelay: `${i * 70}ms`,
                 animationFillMode: "both",
@@ -118,8 +122,8 @@ const SuggestedBets = () => {
         loading={dreamLoading}
       />
       <CarouselSection
-        title="⭐ Melhores do Dia"
-        description="Nossas principais picks para hoje"
+        title="⭐ Melhores da Semana"
+        description="Nossas principais picks para a semana"
         bets={bestOfDayBets}
         scrollRef={bestScrollRef}
         theme="best"

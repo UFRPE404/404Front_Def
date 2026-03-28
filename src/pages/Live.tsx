@@ -1,3 +1,4 @@
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -8,6 +9,8 @@ import LeagueFilter from "@/components/LeagueFilter";
 import { useLiveMatches } from "@/hooks/useMatchesData";
 import { generateMatchAnalysis } from "@/utils/matchAnalysis";
 import { useBetSlip } from "@/contexts/BetSlipContext";
+import { getMatchLiveStats, getMatchOdds, type MatchLiveStats } from "@/services/matchesService";
+import { ChevronLeft, ChevronRight, Trophy, Dumbbell, Target, Volleyball, Gamepad2, Zap, Sparkles } from "lucide-react";
 import { getFeaturedMatches, getMatchTier } from "@/utils/matchPriority";
 import { ChevronLeft, ChevronRight, Trophy, Dumbbell, Target, Volleyball, Gamepad2, Zap, Flame, Star, Sparkles } from "lucide-react";
 
@@ -110,15 +113,62 @@ function TickerCard({ match, onClick }: { match: any; onClick: () => void }) {
 }
 
 /* ── Live match card ── */
-function LiveMatchCard({ match }: { match: any }) {
+function LiveMatchCard({ match, realStats }: { match: any; realStats?: MatchLiveStats | null }) {
   const navigate = useNavigate();
   const { addSelection, isSelected } = useBetSlip();
-  const stats = useMemo(() => generateLiveStats(match.teamA, match.teamB, match.odds, match.sport), [match]);
-  const analysis = generateMatchAnalysis(match.time, match.scoreA, match.scoreB, match.odds, match.sport, true);
-  const aiInsight = useMemo(() => generateAIInsight(match.teamA, match.teamB, match.odds, match.scoreA, match.scoreB), [match]);
-  const probA = analysis.winProb.teamA;
-  const probB = analysis.winProb.teamB;
-  const probDraw = analysis.winProb.draw;
+
+  // Fetch real odds for live matches
+  const [realOdds, setRealOdds] = useState<[number, number, number] | null>(null);
+  const oddsFetchedRef = useRef(false);
+  const isPlaceholderOdds = match.odds[0] === 1.50 && match.odds[1] === 3.50 && match.odds[2] === 4.00;
+
+  useEffect(() => {
+    if (oddsFetchedRef.current || !isPlaceholderOdds) return;
+    oddsFetchedRef.current = true;
+    getMatchOdds(match.id).then(({ simpleOdds }) => {
+      if (simpleOdds) setRealOdds(simpleOdds);
+    }).catch(() => {});
+  }, [match.id, isPlaceholderOdds]);
+
+  const odds = realOdds ?? (isPlaceholderOdds ? null : match.odds);
+  const hasOdds = odds !== null;
+
+  // Use real stats when available, fall back to generated stats
+  const stats = useMemo(() => {
+    if (realStats && match.sport !== "Basquete" && match.sport !== "Tênis" && match.sport !== "Vôlei") {
+      const home = realStats.home;
+      const away = realStats.away;
+      return [
+        {
+          label: "Posse",
+          a: home.possession != null ? `${home.possession}%` : "—",
+          b: away.possession != null ? `${away.possession}%` : "—",
+        },
+        {
+          label: "Finalizações",
+          a: home.shots != null ? home.shots : "—",
+          b: away.shots != null ? away.shots : "—",
+        },
+        {
+          label: "Faltas",
+          a: home.yellowCards != null ? home.yellowCards : "—",
+          b: away.yellowCards != null ? away.yellowCards : "—",
+        },
+      ];
+    }
+    // Fallback: dados não disponíveis
+    return null;
+  }, [match, realStats]);
+
+  const displayOdds = odds ?? match.odds;
+  const analysis = generateMatchAnalysis(match.time, match.scoreA, match.scoreB, displayOdds, match.sport, true);
+  const aiInsight = useMemo(() => {
+    if (!realStats) return null;
+    return generateAIInsight(match.teamA, match.teamB, displayOdds, match.scoreA, match.scoreB);
+  }, [match, realStats, displayOdds]);
+  const probA = hasOdds ? analysis.winProb.teamA : null;
+  const probB = hasOdds ? analysis.winProb.teamB : null;
+  const probDraw = hasOdds ? analysis.winProb.draw : null;
 
   const isWinningA = (match.scoreA ?? 0) > (match.scoreB ?? 0);
   const isWinningB = (match.scoreB ?? 0) > (match.scoreA ?? 0);
@@ -192,24 +242,31 @@ function LiveMatchCard({ match }: { match: any }) {
         </div>
 
         {/* ── Row 3: Probability bar (always visible, thin + clean) ── */}
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold tabular-nums text-emerald-500 w-7 text-right">{probA}%</span>
-          <div className="flex-1 h-1 flex rounded-full overflow-hidden bg-secondary/30">
-            <div className="h-full bg-emerald-500/80 rounded-l-full transition-all duration-700" style={{ width: `${probA}%` }} />
-            {probDraw > 3 && (
-              <div className="h-full bg-muted-foreground/20 transition-all duration-700" style={{ width: `${probDraw}%` }} />
-            )}
-            <div className="h-full bg-amber-500/80 rounded-r-full transition-all duration-700" style={{ width: `${probB}%` }} />
+        {probA != null && probB != null ? (
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold tabular-nums text-emerald-500 w-7 text-right">{probA}%</span>
+            <div className="flex-1 h-1 flex rounded-full overflow-hidden bg-secondary/30">
+              <div className="h-full bg-emerald-500/80 rounded-l-full transition-all duration-700" style={{ width: `${probA}%` }} />
+              {probDraw != null && probDraw > 3 && (
+                <div className="h-full bg-muted-foreground/20 transition-all duration-700" style={{ width: `${probDraw}%` }} />
+              )}
+              <div className="h-full bg-amber-500/80 rounded-r-full transition-all duration-700" style={{ width: `${probB}%` }} />
+            </div>
+            <span className="text-[10px] font-bold tabular-nums text-amber-500 w-7">{probB}%</span>
           </div>
-          <span className="text-[10px] font-bold tabular-nums text-amber-500 w-7">{probB}%</span>
-        </div>
+        ) : (
+          <div className="flex items-center justify-center py-0.5">
+            <span className="text-[10px] text-muted-foreground/50 italic">Probabilidades não disponíveis</span>
+          </div>
+        )}
 
         {/* ── Row 4: Odds (always visible, compact) ── */}
+        {hasOdds ? (
         <div className="flex items-center gap-1.5">
           {[
-            { label: "1", value: match.odds[0] },
-            { label: "X", value: match.odds[1] },
-            { label: "2", value: match.odds[2] },
+            { label: "1", value: odds![0] },
+            { label: "X", value: odds![1] },
+            { label: "2", value: odds![2] },
           ].filter((_, i) => match.sport !== "Tênis" || i !== 1).map((o) => {
             const sel = isSelected(`${match.id}-${o.label}`);
             return (
@@ -228,6 +285,11 @@ function LiveMatchCard({ match }: { match: any }) {
             );
           })}
         </div>
+        ) : (
+          <div className="flex items-center justify-center py-1.5">
+            <span className="text-[10px] text-muted-foreground/50 italic">Odds não disponíveis</span>
+          </div>
+        )}
       </div>
 
       {/* ── Expandable hover section ── */}
@@ -239,18 +301,24 @@ function LiveMatchCard({ match }: { match: any }) {
             <div className="border-t border-border/30" />
 
             {/* Stats grid (compact, 3 columns) */}
-            <div className="grid grid-cols-3 gap-2">
-              {stats.map((stat) => (
-                <div key={stat.label} className="flex flex-col items-center gap-0.5 bg-secondary/20 rounded-lg py-2 px-1">
-                  <div className="flex items-center gap-1.5 tabular-nums">
-                    <span className="text-xs font-bold text-foreground/80">{stat.a}</span>
-                    <span className="text-[9px] text-muted-foreground/40">-</span>
-                    <span className="text-xs font-bold text-foreground/80">{stat.b}</span>
+            {stats ? (
+              <div className="grid grid-cols-3 gap-2">
+                {stats.map((stat) => (
+                  <div key={stat.label} className="flex flex-col items-center gap-0.5 bg-secondary/20 rounded-lg py-2 px-1">
+                    <div className="flex items-center gap-1.5 tabular-nums">
+                      <span className="text-xs font-bold text-foreground/80">{stat.a}</span>
+                      <span className="text-[9px] text-muted-foreground/40">-</span>
+                      <span className="text-xs font-bold text-foreground/80">{stat.b}</span>
+                    </div>
+                    <span className="text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wider">{stat.label}</span>
                   </div>
-                  <span className="text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wider">{stat.label}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-2">
+                <span className="text-[11px] text-muted-foreground/50 italic">Dados não disponíveis</span>
+              </div>
+            )}
 
             {/* AI Insight */}
             <div className="flex gap-2">
@@ -261,7 +329,7 @@ function LiveMatchCard({ match }: { match: any }) {
                   <span className="text-[9px] font-bold uppercase tracking-widest text-primary/60">Análise IA</span>
                 </div>
                 <p className="text-[11px] leading-relaxed text-muted-foreground/70 italic line-clamp-2">
-                  {aiInsight}
+                  {aiInsight || "Análise não disponível"}
                 </p>
               </div>
             </div>
@@ -305,6 +373,30 @@ const Live = () => {
   // Priority-based featured live matches
   const featuredLive = useMemo(() => getFeaturedMatches(liveMatches), [liveMatches]);
   const featuredTier = featuredLive.length > 0 ? getMatchTier(featuredLive[0]) : 0;
+
+  // ── Real live stats for each match ──
+  const [liveStatsMap, setLiveStatsMap] = useState<Record<string, MatchLiveStats | null>>({});
+
+  const fetchAllLiveStats = useCallback(async (matches: typeof liveMatches) => {
+    if (matches.length === 0) return;
+    const results = await Promise.allSettled(
+      matches.map((m) => getMatchLiveStats(m.id))
+    );
+    const newMap: Record<string, MatchLiveStats | null> = {};
+    matches.forEach((m, i) => {
+      const r = results[i];
+      newMap[m.id] = r.status === "fulfilled" ? r.value : null;
+    });
+    setLiveStatsMap(newMap);
+  }, []);
+
+  // Fetch live stats on mount and every 10s (synced with match polling)
+  useEffect(() => {
+    if (liveMatches.length === 0) return;
+    fetchAllLiveStats(liveMatches);
+    const intervalId = setInterval(() => fetchAllLiveStats(liveMatches), 10_000);
+    return () => clearInterval(intervalId);
+  }, [liveMatches, fetchAllLiveStats]);
 
   const sportCounts = useMemo(() => {
     const counts: Record<string, number> = {
@@ -506,7 +598,7 @@ const Live = () => {
                           animationDuration: "350ms",
                         }}
                       >
-                        <LiveMatchCard match={match} />
+                        <LiveMatchCard match={match} realStats={liveStatsMap[match.id]} />
                       </div>
                     ))}
                   </div>
