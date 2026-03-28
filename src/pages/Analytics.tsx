@@ -427,9 +427,7 @@ const Analytics = () => {
       .finally(() => setOddsLoading(false));
     setH2hLoading(true);
     getMatchH2H(match.id).then(setH2hApiData).finally(() => setH2hLoading(false));
-    if (!match?.live) {
-      getMatchHistoric(match.id, 10).then(setHistoricData).catch(() => setHistoricData(null));
-    }
+    getMatchHistoric(match.id, 10).then(setHistoricData).catch(() => setHistoricData(null));
   }, [match?.id]);
 
   // Fetch live stats para jogos ao vivo (com refresh a cada 30s)
@@ -520,7 +518,6 @@ const Analytics = () => {
                 {match.sport && <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-secondary ml-1">{match.sport}</span>}
               </div>
               <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                {details.stadium && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {details.stadium}</span>}
               </div>
             </div>
             <div className="px-5 py-6 sm:py-8">
@@ -583,9 +580,6 @@ const Analytics = () => {
                 ))}
               </div>
             )}
-            <div className="px-5 py-2 border-t border-border/30 flex items-center justify-center gap-4 text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-1"><User className="w-3 h-3" /> {details.referee}</span>
-            </div>
           </div>
         </RevealSection>
 
@@ -611,8 +605,6 @@ const Analytics = () => {
                     {[
                       { icon: Trophy, label: "Competicao", value: match.league },
                       { icon: Clock, label: "Horario", value: `${match.date ? `${match.date} - ` : ""}${match.time}` },
-                      { icon: MapPin, label: "Local", value: details.stadium },
-                      { icon: User, label: "Arbitro", value: details.referee },
                     ].map((item, i) => (
                       <div key={i} className="flex items-start gap-2.5 p-3 rounded-lg bg-secondary/30">
                         <item.icon className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
@@ -662,7 +654,7 @@ const Analytics = () => {
               )}
               <RevealSection delay={80}>
                 <SectionCard>
-                  <SectionTitle icon={BarChart3}>Estatisticas Rapidas</SectionTitle>
+                  <SectionTitle icon={BarChart3}><span>Estatisticas Rapidas <span className="text-[10px] text-muted-foreground font-normal">(Media dos ultimos 10 jogos)</span></span></SectionTitle>
                   <div className="flex items-center justify-between px-1 mb-1">
                     <span className="text-xs font-bold text-primary">{match.teamA}</span>
                     <span className="text-xs font-bold text-foreground/70">{match.teamB}</span>
@@ -672,10 +664,31 @@ const Analytics = () => {
                       {match.sport === "Basquete" && details.basketballStats && (<><StatBar label="Pontos" home={details.basketballStats.points[0]} away={details.basketballStats.points[1]} /><StatBar label="FG %" home={details.basketballStats.fieldGoalPercentage[0]} away={details.basketballStats.fieldGoalPercentage[1]} unit="%" /><StatBar label="Rebotes" home={details.basketballStats.rebounds[0]} away={details.basketballStats.rebounds[1]} /><StatBar label="Assistencias" home={details.basketballStats.assists[0]} away={details.basketballStats.assists[1]} /></>)}
                       {match.sport === "Tenis" && details.tennisStats && (<><StatBar label="Aces" home={details.tennisStats.aces[0]} away={details.tennisStats.aces[1]} /><StatBar label="1o Saque %" home={details.tennisStats.firstServePercentage[0]} away={details.tennisStats.firstServePercentage[1]} unit="%" /><StatBar label="Break Points" home={details.tennisStats.breakPointsWon[0]} away={details.tennisStats.breakPointsWon[1]} /><StatBar label="Vencedoras" home={details.tennisStats.winners[0]} away={details.tennisStats.winners[1]} /></>)}
                       {match.sport === "Volei" && details.volleyballStats && (<><StatBar label="Pontos" home={details.volleyballStats.points[0]} away={details.volleyballStats.points[1]} /><StatBar label="Kills" home={details.volleyballStats.kills[0]} away={details.volleyballStats.kills[1]} /><StatBar label="Aces" home={details.volleyballStats.aces[0]} away={details.volleyballStats.aces[1]} /><StatBar label="Bloqueios" home={details.volleyballStats.blockingPoints[0]} away={details.volleyballStats.blockingPoints[1]} /></>)}
-                      {(!match.sport || match.sport === "Futebol") && (<><StatBar label="Posse de Bola" home={details.stats.possession[0]} away={details.stats.possession[1]} unit="%" /><StatBar label="Finalizacoes" home={details.stats.shots[0]} away={details.stats.shots[1]} /><StatBar label="Chutes no Alvo" home={details.stats.shotsOnTarget[0]} away={details.stats.shotsOnTarget[1]} /><StatBar label="Escanteios" home={details.stats.corners[0]} away={details.stats.corners[1]} /></>)}
+                      {(!match.sport || match.sport === "Futebol") && liveStats ? (
+                        <>
+                          {(liveStats.home.possession != null || liveStats.away.possession != null) && <StatBar label="Posse de Bola" home={liveStats.home.possession ?? 0} away={liveStats.away.possession ?? 0} unit="%" />}
+                          {(liveStats.home.shots != null || liveStats.away.shots != null) && <StatBar label="Finalizacoes" home={liveStats.home.shots ?? 0} away={liveStats.away.shots ?? 0} />}
+                          {(liveStats.home.shotsOnTarget != null || liveStats.away.shotsOnTarget != null) && <StatBar label="Chutes no Alvo" home={liveStats.home.shotsOnTarget ?? 0} away={liveStats.away.shotsOnTarget ?? 0} />}
+                          {(liveStats.home.corners != null || liveStats.away.corners != null) && <StatBar label="Escanteios" home={liveStats.home.corners ?? 0} away={liveStats.away.corners ?? 0} />}
+                        </>
+                      ) : (!match.sport || match.sport === "Futebol") && (
+                        <><StatBar label="Posse de Bola" home={details.stats.possession[0]} away={details.stats.possession[1]} unit="%" /><StatBar label="Finalizacoes" home={details.stats.shots[0]} away={details.stats.shots[1]} /><StatBar label="Chutes no Alvo" home={details.stats.shotsOnTarget[0]} away={details.stats.shotsOnTarget[1]} /><StatBar label="Escanteios" home={details.stats.corners[0]} away={details.stats.corners[1]} /></>
+                      )}
                     </>
                   ) : (
-                    <>{avgStats.slice(0, 5).map((stat, i) => (<StatBar key={i} label={stat.label} home={stat.home} away={stat.away} unit={(stat as { unit?: string }).unit} />))}</>
+                    <>
+                      {(!match.sport || match.sport === "Futebol") && historicData ? (
+                        <>
+                          <StatBar label="Gols Marcados" home={historicData.home.avg.avgGoalsScored} away={historicData.away.avg.avgGoalsScored} />
+                          <StatBar label="Gols Sofridos" home={historicData.home.avg.avgGoalsConceded} away={historicData.away.avg.avgGoalsConceded} />
+                          {(historicData.home.avg.avgPossession != null || historicData.away.avg.avgPossession != null) && <StatBar label="Posse de Bola %" home={historicData.home.avg.avgPossession ?? 0} away={historicData.away.avg.avgPossession ?? 0} unit="%" />}
+                          {(historicData.home.avg.avgShots != null || historicData.away.avg.avgShots != null) && <StatBar label="Finalizacoes" home={historicData.home.avg.avgShots ?? 0} away={historicData.away.avg.avgShots ?? 0} />}
+                          {(historicData.home.avg.avgShotsOnTarget != null || historicData.away.avg.avgShotsOnTarget != null) && <StatBar label="Chutes no Alvo" home={historicData.home.avg.avgShotsOnTarget ?? 0} away={historicData.away.avg.avgShotsOnTarget ?? 0} />}
+                        </>
+                      ) : (
+                        <>{avgStats.slice(0, 5).map((stat, i) => (<StatBar key={i} label={stat.label} home={stat.home} away={stat.away} unit={(stat as { unit?: string }).unit} />))}</>
+                      )}
+                    </>
                   )}
                 </SectionCard>
               </RevealSection>
@@ -711,7 +724,28 @@ const Analytics = () => {
                       <h4 className="text-xs font-semibold text-foreground mb-1.5">Analise IA</h4>
                       <p className="text-xs text-muted-foreground leading-relaxed">
                         Favorito: <strong className="text-primary">{favLabel}</strong> com <strong className="text-primary">{winProb}%</strong> de probabilidade implicita.
-                        {(!match.sport || match.sport === "Futebol") && details.stats.possession[0] > 50 ? ` ${match.teamA} domina a posse de bola e estatisticas ofensivas.` : " A analise estatistica favorece a consistencia recente."}
+                        {(() => {
+                          if ((!match.sport || match.sport === "Futebol") && historicData) {
+                            const hAvg = historicData.home.avg;
+                            const aAvg = historicData.away.avg;
+                            const hTotals = historicData.home.totals;
+                            const aTotals = historicData.away.totals;
+                            const parts: string[] = [];
+                            parts.push(` ${match.teamA} marca em media ${hAvg.avgGoalsScored} gols e sofre ${hAvg.avgGoalsConceded} por jogo (${hTotals.winPercentage}% de vitorias).`);
+                            parts.push(` ${match.teamB} marca em media ${aAvg.avgGoalsScored} gols e sofre ${aAvg.avgGoalsConceded} por jogo (${aTotals.winPercentage}% de vitorias).`);
+                            if (hAvg.avgPossession != null && aAvg.avgPossession != null) {
+                              const domina = hAvg.avgPossession > aAvg.avgPossession ? match.teamA : match.teamB;
+                              parts.push(` ${domina} domina a posse de bola.`);
+                            }
+                            return parts.join("");
+                          }
+                          if ((!match.sport || match.sport === "Futebol") && liveStats) {
+                            const possession = liveStats.home.possession;
+                            if (possession != null && possession > 50) return ` ${match.teamA} domina a posse de bola e estatisticas ofensivas.`;
+                            if (possession != null && possession < 50) return ` ${match.teamB} domina a posse de bola e estatisticas ofensivas.`;
+                          }
+                          return " A analise estatistica favorece a consistencia recente.";
+                        })()}
                       </p>
                     </div>
                   </div>
@@ -721,16 +755,66 @@ const Analytics = () => {
                 <SectionCard>
                   <h3 className="text-xs font-semibold text-foreground mb-3 flex items-center gap-2"><Target className="w-3.5 h-3.5 text-primary" /> Padroes - Ultimos 10 Jogos</h3>
                   <div className="space-y-2">
-                    {commonStats.slice(0, 5).map((cs, i) => (
-                      <div key={i} className="flex items-center gap-2.5">
-                        <span className="text-xs font-bold text-primary w-5 h-5 rounded flex items-center justify-center bg-primary/10 shrink-0">{cs.icon}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-foreground truncate">{cs.label}</p>
-                          <div className="flex items-center gap-2 mt-1"><div className="flex-1 h-1 rounded-full bg-muted/30 overflow-hidden"><div className="h-full rounded-full bg-primary/60 transition-all duration-700" style={{ width: `${cs.pct}%` }} /></div></div>
+                    {(() => {
+                      // Derive real patterns from historicData when available (futebol only)
+                      if ((!match.sport || match.sport === "Futebol") && historicData) {
+                        const hT = historicData.home.totals;
+                        const aT = historicData.away.totals;
+                        const hGames = historicData.home.games;
+                        const aGames = historicData.away.games;
+                        const totalGames = Math.max(hT.matches, aT.matches, 1);
+
+                        // Count patterns across both teams' games
+                        const over25 = hGames.filter(g => {
+                          const [a, b] = g.score.split(/[-x:]/).map(Number);
+                          return (a + b) > 2;
+                        }).length + aGames.filter(g => {
+                          const [a, b] = g.score.split(/[-x:]/).map(Number);
+                          return (a + b) > 2;
+                        }).length;
+                        const over25Total = hGames.length + aGames.length;
+                        const over25Pct = over25Total > 0 ? Math.round((over25 / over25Total) * 100) : 0;
+
+                        const bttsCount = hT.btts + aT.btts;
+                        const bttsPct = over25Total > 0 ? Math.round((bttsCount / over25Total) * 100) : 0;
+
+                        const csCount = hT.cleanSheets + aT.cleanSheets;
+                        const csPct = over25Total > 0 ? Math.round((csCount / over25Total) * 100) : 0;
+
+                        const homeWinPct = hT.winPercentage;
+                        const awayWinPct = aT.winPercentage;
+
+                        const realPatterns = [
+                          { icon: "G", label: "Mais de 2.5 gols", record: `${over25}/${over25Total}`, pct: over25Pct },
+                          { icon: "G", label: "Ambas marcaram", record: `${bttsCount}/${over25Total}`, pct: bttsPct },
+                          { icon: "V", label: `${match.teamA} venceu`, record: `${hT.wins}/${hT.matches}`, pct: homeWinPct },
+                          { icon: "V", label: `${match.teamB} venceu`, record: `${aT.wins}/${aT.matches}`, pct: awayWinPct },
+                          { icon: "D", label: "Clean sheet (sem sofrer gol)", record: `${csCount}/${over25Total}`, pct: csPct },
+                        ];
+
+                        return realPatterns.map((cs, i) => (
+                          <div key={i} className="flex items-center gap-2.5">
+                            <span className="text-xs font-bold text-primary w-5 h-5 rounded flex items-center justify-center bg-primary/10 shrink-0">{cs.icon}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs text-foreground truncate">{cs.label}</p>
+                              <div className="flex items-center gap-2 mt-1"><div className="flex-1 h-1 rounded-full bg-muted/30 overflow-hidden"><div className="h-full rounded-full bg-primary/60 transition-all duration-700" style={{ width: `${cs.pct}%` }} /></div></div>
+                            </div>
+                            <span className="text-xs font-bold text-primary shrink-0 tabular-nums">{cs.record}</span>
+                          </div>
+                        ));
+                      }
+                      // Fallback: mock data
+                      return commonStats.slice(0, 5).map((cs, i) => (
+                        <div key={i} className="flex items-center gap-2.5">
+                          <span className="text-xs font-bold text-primary w-5 h-5 rounded flex items-center justify-center bg-primary/10 shrink-0">{cs.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-foreground truncate">{cs.label}</p>
+                            <div className="flex items-center gap-2 mt-1"><div className="flex-1 h-1 rounded-full bg-muted/30 overflow-hidden"><div className="h-full rounded-full bg-primary/60 transition-all duration-700" style={{ width: `${cs.pct}%` }} /></div></div>
+                          </div>
+                          <span className="text-xs font-bold text-primary shrink-0 tabular-nums">{cs.record}</span>
                         </div>
-                        <span className="text-xs font-bold text-primary shrink-0 tabular-nums">{cs.record}</span>
-                      </div>
-                    ))}
+                      ));
+                    })()}
                   </div>
                 </SectionCard>
               </RevealSection>
