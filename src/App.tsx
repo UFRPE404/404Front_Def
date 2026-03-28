@@ -11,10 +11,30 @@ import Live from "./pages/Live.tsx";
 import Suggestions from "./pages/Suggestions.tsx";
 import Sports from "./pages/Sports.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import { Component, ErrorInfo, ReactNode } from "react";
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  componentDidCatch(error: Error, info: ErrorInfo) { console.error("App crash:", error, info); }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 32, fontFamily: "monospace", color: "red", background: "#111", minHeight: "100vh" }}>
+          <h2>App Error</h2>
+          <pre>{(this.state.error as Error).message}</pre>
+          <pre>{(this.state.error as Error).stack}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const queryClient = new QueryClient();
 
 const App = () => (
+  <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <BetSlipProvider>
@@ -35,6 +55,7 @@ const App = () => (
       </BetSlipProvider>
     </TooltipProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

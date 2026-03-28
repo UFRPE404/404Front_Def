@@ -1,5 +1,4 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -12,7 +11,7 @@ import { useBetSlip } from "@/contexts/BetSlipContext";
 import { getMatchLiveStats, getMatchOdds, type MatchLiveStats } from "@/services/matchesService";
 import { ChevronLeft, ChevronRight, Trophy, Dumbbell, Target, Volleyball, Gamepad2, Zap, Sparkles } from "lucide-react";
 import { getFeaturedMatches, getMatchTier } from "@/utils/matchPriority";
-import { ChevronLeft, ChevronRight, Trophy, Dumbbell, Target, Volleyball, Gamepad2, Zap, Flame, Star, Sparkles } from "lucide-react";
+import {Flame, Star} from "lucide-react";
 
 /* ── helpers ───────────────────────────────────── */
 
