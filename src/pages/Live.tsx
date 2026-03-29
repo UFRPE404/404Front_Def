@@ -551,7 +551,7 @@ const Live = () => {
                   className="flex-shrink-0 w-[280px] snap-start animate-in fade-in slide-in-from-bottom-2"
                   style={{ animationDelay: `${i * 50}ms`, animationFillMode: "both", animationDuration: "350ms" }}
                 >
-                  <LiveMatchCard match={match} />
+                  <LiveMatchCard match={match} realStats={liveStatsMap[match.id]} />
                 </div>
               ))}
             </div>

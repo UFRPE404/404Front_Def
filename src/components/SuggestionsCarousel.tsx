@@ -83,22 +83,30 @@ const SuggestionsCarousel = () => {
             Nenhuma sugestão disponível no momento.
           </div>
         ) : (
-          bets.map((bet, i) => (
-            <div
-              key={bet.id}
-              className="flex-shrink-0 w-[280px] animate-in fade-in slide-in-from-bottom-3"
-              style={{
-                animationDelay: `${i * 70}ms`,
-                animationFillMode: "both",
-                animationDuration: "500ms",
-              }}
-            >
-              <SuggestedBetCard
-                {...bet}
-                theme={bet.type === "dream" ? "dream" : "best"}
-              />
-            </div>
-          ))
+          (() => {
+            const seenMatchIds = new Set<string>();
+            const uniqueBets = bets.filter(bet => {
+              if (seenMatchIds.has(bet.matchId)) return false;
+              seenMatchIds.add(bet.matchId);
+              return true;
+            });
+            return uniqueBets.map((bet, i) => (
+              <div
+                key={bet.id}
+                className="flex-shrink-0 w-[280px] animate-in fade-in slide-in-from-bottom-3"
+                style={{
+                  animationDelay: `${i * 70}ms`,
+                  animationFillMode: "both",
+                  animationDuration: "500ms",
+                }}
+              >
+                <SuggestedBetCard
+                  {...bet}
+                  theme={bet.type === "dream" ? "dream" : "best"}
+                />
+              </div>
+            ));
+          })()
         )}
       </div>
     </section>
